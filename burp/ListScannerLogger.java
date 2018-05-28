@@ -11,6 +11,6 @@ class ListScannerLogger implements IListScannerLogger {
     }
 
     public synchronized void Log (String message){
-        logger.append(message);
+        logger.append(message + System.lineSeparator());
     }
 }

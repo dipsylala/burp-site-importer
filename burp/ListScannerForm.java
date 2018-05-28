@@ -1,12 +1,6 @@
 package burp;
 
 import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
-import java.awt.event.ActionEvent;
-import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public class ListScannerForm {
     private JButton jLoadButton;
@@ -15,7 +9,16 @@ public class ListScannerForm {
     private JPanel panel;
     private JLabel titleLabel;
     private JButton jImportButton;
-    private JList jSiteList;
-    private JTextArea jLog;
     private JCheckBox jFollowRedirectCheckbox;
+    private JSplitPane jSiteListSplitPane;
+    private JList jSiteList;
+    private JPanel jSiteListPadder;
+    private JSplitPane jLogAreaSplitPane;
+    private JTextPane jLogArea;
+    private JPanel jLogAreaPadder;
+    private JTextField jAddSiteText;
+    private JButton jAddSiteButton;
+    private JButton jRemoveButton;
+    private JButton jPasteURLsButton;
+    private JButton jClearSiteButton;
 }

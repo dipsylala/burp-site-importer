@@ -2,13 +2,21 @@ package burp;
 
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
+import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.plaf.basic.BasicSplitPaneDivider;
+import javax.swing.plaf.basic.BasicSplitPaneUI;
+import javax.swing.table.TableColumn;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultCaret;
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -29,11 +37,71 @@ public class BurpExtender implements IBurpExtender, ITab
     private JCheckBox jAddToScopeCheckBox;
     private JCheckBox jFollowRedirectCheckbox;
     private JTextArea jLogArea;
-    private DefaultListModel<String> siteListModel = new DefaultListModel<String>();
+    private DefaultListModel<String> siteListModel = new DefaultListModel<>();
     private JList jSiteList;
+    JTextField jAddSiteText;
     private IListScannerLogger logger;
 
-    private static final int MAX_SITE = 100;
+    private static final Color BURPSUITE_ORANGE = new Color (255,102,51);
+
+    private UrlCallThreadManager threadManager;
+    private Thread siteImportThread;
+
+    public static void flattenSplitPane(JSplitPane jSplitPane) {
+
+        jSplitPane.setUI(new BasicSplitPaneUI() {
+            public BasicSplitPaneDivider createDefaultDivider() {
+                return new BasicSplitPaneDivider(this) {
+                    public void setBorder(Border b) {
+
+                    }
+
+                    public void paint(Graphics var1) {
+                        int[] coordX = new int[3];
+                        int[] coordY = new int[3];
+                        var1.setColor(this.getBackground());
+                        var1.fillRect(0, 0, this.getWidth(), this.getHeight());
+                        if (this.orientation == JSplitPane.VERTICAL_SPLIT) {
+                            int minHeight = Math.min(this.getHeight(), 10);
+                            int offset = (this.getHeight() / 2) - (minHeight / 2);
+
+                            coordX[0] = offset + minHeight;
+                            coordY[0] = minHeight;
+
+                            coordX[1] = offset + (minHeight * 2);
+                            coordY[1] = 0;
+
+                            coordX[2] = offset;
+                            coordY[2] = 0;
+                        } else {
+                            int minWidth = Math.min(this.getWidth(), 10);
+                            int offset = (this.getHeight() / 2) - (minWidth / 2);
+
+                            coordX[0] = 0;
+                            coordY[0] = offset;
+
+                            coordX[1] = minWidth;
+                            coordY[1] = (minWidth / 2) + offset;
+
+                            coordX[2] = 0;
+                            coordY[2] = offset + minWidth;
+                        }
+
+                        var1.setColor(BURPSUITE_ORANGE);
+                        var1.fillPolygon(coordX, coordY, 3);
+                    }
+                };
+            }
+        });
+
+        jSplitPane.setBorder(null);
+    }
+
+    private GridBagConstraints getDefaultGridBagConstraints(){
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(3,3,3,3);
+        return gbc;
+    }
 
     @Override
     public void registerExtenderCallbacks(IBurpExtenderCallbacks callbacks)
@@ -44,95 +112,230 @@ public class BurpExtender implements IBurpExtender, ITab
         callbacks.setExtensionName("Site Import Extension");
 
         SwingUtilities.invokeLater(() -> {
+
             panel = new JPanel(new GridBagLayout());
             panel.setBorder(new EmptyBorder(15, 15, 15, 15));
 
             Font defaultFont = (Font)UIManager.getLookAndFeelDefaults().get("defaultFont");
-
-            GridBagConstraints gbc = new GridBagConstraints();
-            gbc.weightx = 0;
-            gbc.weighty = 0;
-            gbc.insets = new Insets(3,3,3,3);
+            GridBagConstraints gbc = getDefaultGridBagConstraints();
 
             JLabel titleLabel = new JLabel("Site Import");
             titleLabel.setFont(new Font("Tahoma", Font.BOLD, (int) (defaultFont.getSize() * 1.2)));
-            titleLabel.setForeground(new Color(235,102,51));
+            titleLabel.setForeground(BURPSUITE_ORANGE);
             gbc.gridx = 0;
             gbc.gridy = 0;
             gbc.fill = GridBagConstraints.HORIZONTAL;
             panel.add(titleLabel, gbc);
 
-            // Loading area
-            JButton jLoadButton = new JButton ("Load Sites");
+            // Site List Buttons
+            JButton jPasteURLButton = new JButton ("Paste");
+            gbc = getDefaultGridBagConstraints();
             gbc.gridx = 0;
             gbc.gridy = 1;
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            jPasteURLButton.addActionListener(this::jPasteURLButtonClicked);
+            panel.add(jPasteURLButton, gbc);
+
+            // Loading area
+            JButton jLoadButton = new JButton ("Load ...");
+            gbc = getDefaultGridBagConstraints();
+            gbc.gridx = 0;
+            gbc.gridy = 2;
             gbc.fill = GridBagConstraints.HORIZONTAL;
             jLoadButton.addActionListener(this::jButtonLoadClicked);
             panel.add(jLoadButton, gbc);
 
+            JButton jRemoveButton = new JButton ("Remove");
+            gbc = getDefaultGridBagConstraints();
+            gbc.gridx = 0;
+            gbc.gridy = 3;
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            jRemoveButton.addActionListener(this::jRemoveButtonClicked);
+            panel.add(jRemoveButton, gbc);
+
+            JButton jClearButton = new JButton ("Clear");
+            gbc = getDefaultGridBagConstraints();
+            gbc.gridx = 0;
+            gbc.gridy = 4;
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            jClearButton.addActionListener(this::jClearButtonClicked);
+            panel.add(jClearButton, gbc);
+
+            // Site List area
+            JPanel jSiteListPadder = new JPanel();
+
             jSiteList = new JList(siteListModel);
             JScrollPane jSiteListScrollPane = new JScrollPane(jSiteList);
-            gbc.gridwidth = 2;
+            JSplitPane jSiteListSplitPane = new JSplitPane();
+            jSiteListSplitPane.setLeftComponent(jSiteListScrollPane);
+            jSiteListSplitPane.setRightComponent(jSiteListPadder);
+            jSiteListSplitPane.setDividerLocation(300);
+            jSiteListSplitPane.setOneTouchExpandable(false);
+            jSiteListSplitPane.setDividerSize(10);
+            jSiteListSplitPane.setMinimumSize(new Dimension(100,100));
+
+            flattenSplitPane(jSiteListSplitPane);
+            gbc = getDefaultGridBagConstraints();
+            gbc.gridheight = 5;
+            gbc.gridwidth = 3;
             gbc.gridx = 1;
-            gbc.gridy = 2;
+            gbc.gridy = 1;
             gbc.weightx = 0;
             gbc.weighty = 1;
             gbc.fill = GridBagConstraints.BOTH;
-            panel.add(jSiteListScrollPane, gbc);
+
+            panel.add(jSiteListSplitPane, gbc);
+
+            JButton jAddSiteButton = new JButton ("Add");
+            gbc = getDefaultGridBagConstraints();
+            gbc.gridx = 0;
+            gbc.gridy = 6;
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            jAddSiteButton.addActionListener(this::jAddSiteButtonClicked);
+            panel.add(jAddSiteButton, gbc);
+
+            jAddSiteText = new JTextField("Enter a new item");
+            jAddSiteText.setForeground(Color.GRAY);
+            jAddSiteText.addFocusListener(new FocusListener() {
+                @Override
+                public void focusGained(FocusEvent e) {
+                    if (jAddSiteText.getText().equals("Enter a new item")) {
+                        jAddSiteText.setText("");
+                        jAddSiteText.setForeground(Color.BLACK);
+                    }
+                }
+                @Override
+                public void focusLost(FocusEvent e) {
+                    if (jAddSiteText.getText().isEmpty()) {
+                        jAddSiteText.setForeground(Color.GRAY);
+                        jAddSiteText.setText("Enter a new item");
+                    }
+                }
+            });
+
+            gbc = getDefaultGridBagConstraints();
+            gbc.gridwidth = 2;
+            gbc.gridx = 1;
+            gbc.gridy = 6;
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            panel.add(jAddSiteText, gbc);
 
             JButton jImportButton = new JButton ("Import to Site List");
-            gbc.gridwidth = 1;
+            gbc = getDefaultGridBagConstraints();
             gbc.gridx = 0;
-            gbc.gridy = 3;
-            gbc.weightx = 0;
-            gbc.weighty = 0;
+            gbc.gridy = 9;
             gbc.anchor = NORTH;
             jImportButton.addActionListener(this::jButtonImportClicked);
             panel.add(jImportButton, gbc);
 
             jSpiderCheckBox = new JCheckBox("Spider URLs");
-            gbc.gridwidth = 1;
+            gbc = getDefaultGridBagConstraints();
             gbc.gridx = 1;
-            gbc.gridy = 3;
-
+            gbc.gridy = 7;
             gbc.fill = GridBagConstraints.HORIZONTAL;
             panel.add(jSpiderCheckBox, gbc);
 
             jAddToScopeCheckBox = new JCheckBox("Add to Scope");
+            gbc = getDefaultGridBagConstraints();
             gbc.gridx = 1;
-            gbc.gridy = 4;
+            gbc.gridy = 8;
             gbc.fill = GridBagConstraints.HORIZONTAL;
             panel.add(jAddToScopeCheckBox, gbc);
 
             jFollowRedirectCheckbox = new JCheckBox("Follow Redirections");
+            gbc = getDefaultGridBagConstraints();
             gbc.gridx = 2;
-            gbc.gridy = 3;
+            gbc.gridy = 7;
             gbc.fill = GridBagConstraints.HORIZONTAL;
             panel.add(jFollowRedirectCheckbox, gbc);
 
+            // Log area
             JLabel jLogLabel = new JLabel("Log");
+            gbc = getDefaultGridBagConstraints();
             gbc.gridx = 1;
-            gbc.gridy = 5;
+            gbc.gridy = 10;
             gbc.fill = GridBagConstraints.HORIZONTAL;
             panel.add(jLogLabel, gbc);
 
             jLogArea = new JTextArea ();
-            JScrollPane sp = new JScrollPane(jLogArea);
+            JScrollPane jLogAreaScrollPanel = new JScrollPane(jLogArea);
             DefaultCaret caret = (DefaultCaret) jLogArea.getCaret();
             caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
-            gbc.gridwidth = 2;
+
+            JPanel jLogAreaPadder = new JPanel();
+
+            JSplitPane jLogAreaSplitPane = new JSplitPane();
+            jLogAreaSplitPane.setLeftComponent(jLogAreaScrollPanel);
+            jLogAreaSplitPane.setRightComponent(jLogAreaPadder);
+            jLogAreaSplitPane.setDividerLocation(500);
+            jLogAreaSplitPane.setOneTouchExpandable(false);
+            jLogAreaSplitPane.setDividerSize(10);
+            jLogAreaSplitPane.setMinimumSize(new Dimension(100,100));
+
+            flattenSplitPane(jLogAreaSplitPane);
+            gbc = getDefaultGridBagConstraints();
+
+            gbc.gridheight = 1;
+            gbc.gridwidth = 3;
             gbc.gridx = 1;
-            gbc.gridy = 6;
+            gbc.gridy = 11;
             gbc.weightx = 1;
             gbc.weighty = 1;
             gbc.fill = GridBagConstraints.BOTH;
-            panel.add(sp, gbc);
+            panel.add(jLogAreaSplitPane, gbc);
+
 
             this.logger = new ListScannerLogger(jLogArea);
 
             callbacks.addSuiteTab(BurpExtender.this);
         });
 
+    }
+
+    private void jAddSiteButtonClicked(ActionEvent actionEvent) {
+        String site = jAddSiteText.getText().trim();
+        if (site.length() == 0){
+            return;
+        }
+
+        siteListModel.addElement(site);
+        jAddSiteText.setText("");
+    }
+
+    private void jClearButtonClicked(ActionEvent actionEvent) {
+        siteListModel.removeAllElements();
+        this.logger.Log("Sites cleared");
+    }
+
+    private void jPasteURLButtonClicked(ActionEvent actionEvent) {
+        String data;
+        try {
+            data = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
+        } catch (UnsupportedFlavorException e) {
+            this.logger.Log("No text available");
+            return;
+        } catch (IOException e) {
+            this.logger.Log("Could not read from clipboard");
+            return;
+        }
+
+        int lineCount = 0;
+
+        String[] sites = data.split("\n");
+        for (String site : sites){
+            lineCount ++;
+            siteListModel.addElement(site.trim());
+        }
+
+        this.logger.Log(lineCount + " sites loaded from clipboard");
+    }
+
+    private void jRemoveButtonClicked(ActionEvent actionEvent) {
+        int index = this.jSiteList.getSelectedIndices().length - 1;
+
+        while (this.jSiteList.getSelectedIndices().length != 0) {
+            siteListModel.removeElementAt(this.jSiteList.getSelectedIndices()[index--]);
+        }
     }
 
     private void jButtonLoadClicked(ActionEvent actionEvent) {
@@ -146,7 +349,7 @@ public class BurpExtender implements IBurpExtender, ITab
         }
 
         File file = fileChooser.getSelectedFile();
-        jLogArea.append("Loading " + file.getName() + "\n");
+        this.logger.Log("Loading " + file.getName());
 
         int lineCount = 0;
 
@@ -158,19 +361,14 @@ public class BurpExtender implements IBurpExtender, ITab
 
                 siteListModel.addElement(line);
                 line = br.readLine();
-
-                if (lineCount == MAX_SITE){
-                    JOptionPane.showMessageDialog(this.getUiComponent(), "Max site limit " + MAX_SITE + " reached");
-                    break;
-                }
             }
 
-            jLogArea.append(lineCount + " sites loaded" + System.lineSeparator());
+            this.logger.Log(lineCount + " sites loaded");
         } catch (FileNotFoundException e) {
-            jLogArea.append("File not found: " + file.getName() + System.lineSeparator());
-            jLogArea.append("File not found: " + file.getName() + System.lineSeparator());
+            this.logger.Log("File not found: " + file.getName());
+            this.logger.Log("File not found: " + file.getName());
         } catch (IOException e) {
-            jLogArea.append("Error reading file: " + file.getName() + System.lineSeparator());
+            this.logger.Log("Error reading file: " + file.getName());
         }
     }
 
@@ -178,79 +376,29 @@ public class BurpExtender implements IBurpExtender, ITab
 
         // text area could be quite big, so rather than loading it all into an array based on \n
         // let's just grab each line as we need it
-        try{
-            int numberOfSites = validateFileSites(siteListModel);
+        List<String> sites = new ArrayList<>();
 
-            if (numberOfSites > MAX_SITE){
-                JOptionPane.showMessageDialog(this.getUiComponent(), "Max site limit " + MAX_SITE + " reached");
-                return;
-            }
-
-            List<String> sites = new ArrayList<>();
-
-            for (int i = 0; i<siteListModel.size();i++){
-                sites.add(siteListModel.get(i));
-            }
-
-            SiteImportSettings settings = new SiteImportSettings();
-            settings.followRedirects = jFollowRedirectCheckbox.isSelected();
-            settings.deepScan = jSpiderCheckBox.isSelected();
-            settings.addToScope = jAddToScopeCheckBox.isSelected();
-
-            allocateSitesToThreads(sites, settings);
-
-
-        } catch (FileValidationException ex){
-            jLogArea.append(ex.getMessage() + System.lineSeparator());
+        for (int i = 0; i<siteListModel.size();i++){
+            sites.add(siteListModel.get(i));
         }
 
+        SiteImportSettings settings = new SiteImportSettings();
+        settings.followRedirects = jFollowRedirectCheckbox.isSelected();
+        settings.deepScan = jSpiderCheckBox.isSelected();
+        settings.addToScope = jAddToScopeCheckBox.isSelected();
+
+        allocateSitesToThreads(sites, settings);
     }
 
     private void allocateSitesToThreads(List<String> sites, SiteImportSettings settings) {
-        new Thread(new UrlCallThreadManager(this.helpers, this.callbacks, this.logger, sites, settings)).start();
+        this.threadManager = new UrlCallThreadManager(this.helpers, this.callbacks, this.logger, sites, settings);
+        this.siteImportThread = new Thread(threadManager);
+        this.siteImportThread.start();
     }
-
-
-    private int validateFileSites(DefaultListModel siteListModel) throws FileValidationException {
-
-        int lineCount = siteListModel.getSize();
-        int populatedLines = 0;
-
-        String line;
-
-        for(int i = 0; i < lineCount; i ++){
-            line = (String)siteListModel.getElementAt(i);
-
-            if (line.trim().length() == 0){
-                continue;
-            }
-
-            if (!validateLine(line)) {
-                throw new FileValidationException("Error in line " + (i + 1));
-            }
-
-            populatedLines ++;
-
-        }
-
-        return populatedLines;
-    }
-
-    private boolean validateLine (String line)
-    {
-        try {
-            new URL(line);
-            return true;
-        } catch (MalformedURLException e) {
-            return false;
-        }
-    }
-
-
 
     @Override
     public String getTabCaption() {
-        return "Scope Scanner";
+        return "List Scanner";
     }
 
     @Override

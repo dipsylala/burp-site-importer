@@ -37,6 +37,7 @@ public class UrlCallRunner implements Runnable {
         try {
             url = new URL(site);
         } catch (MalformedURLException e) {
+            logger.Log(site + " is not a valid url");
             return;
         }
 
@@ -44,7 +45,7 @@ public class UrlCallRunner implements Runnable {
             return;
         }
 
-        logger.Log("Checking: " + site + System.lineSeparator());
+        logger.Log("Checking: " + site);
         IHttpRequestResponse httpResponse = connectToSite(url);
         callbacks.addToSiteMap(httpResponse);
 
@@ -61,7 +62,7 @@ public class UrlCallRunner implements Runnable {
             String redirectSite = getRedirect (httpResponse.getResponse());
 
             if (redirectSite.length() > 0){
-                logger.Log("Redirection found: " + redirectSite + System.lineSeparator());
+                logger.Log("Redirection found: " + redirectSite);
                 assessSite(redirectSite, redirectedSites);
             }
         }
