@@ -9,15 +9,22 @@ public class UrlCallRunner implements Runnable {
 
     private IExtensionHelpers helpers;
     private IBurpExtenderCallbacks callbacks;
+    private ISiteImportSummary summary;
     private String site;
     private final boolean addToScope;
     private boolean deepScan;
     private boolean followRedirects;
     private IListScannerLogger logger;
 
-    UrlCallRunner(IExtensionHelpers helpers, IBurpExtenderCallbacks callbacks, IListScannerLogger logger, String site, SiteImportSettings settings) {
+    UrlCallRunner(IExtensionHelpers helpers,
+                  IBurpExtenderCallbacks callbacks,
+                  IListScannerLogger logger,
+                  ISiteImportSummary summary,
+                  String site,
+                  SiteImportSettings settings) {
         this.helpers = helpers;
         this.callbacks = callbacks;
+        this.summary = summary;
         this.site = site;
         this.addToScope = settings.addToScope;
         this.deepScan = settings.deepScan;
@@ -37,6 +44,7 @@ public class UrlCallRunner implements Runnable {
         try {
             url = new URL(site);
         } catch (MalformedURLException e) {
+            summary.addBadURL(site);
             logger.Log(site + " is not a valid url");
             return;
         }
@@ -46,8 +54,16 @@ public class UrlCallRunner implements Runnable {
         }
 
         logger.Log("Checking: " + site);
-        IHttpRequestResponse httpResponse = connectToSite(url);
-        callbacks.addToSiteMap(httpResponse);
+
+        IHttpRequestResponse httpResponse;
+
+        try{
+            httpResponse = connectToSite(url);
+            callbacks.addToSiteMap(httpResponse);
+        } catch (RuntimeException ex){
+            summary.addUnreachableSite(site);
+            return;
+        }
 
         if (this.addToScope){
             callbacks.includeInScope(url);
@@ -58,7 +74,6 @@ public class UrlCallRunner implements Runnable {
         }
 
         if (this.followRedirects){
-
             String redirectSite = getRedirect (httpResponse.getResponse());
 
             if (redirectSite.length() > 0){

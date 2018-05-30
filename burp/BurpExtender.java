@@ -1,15 +1,11 @@
 package burp;
 
 import javax.swing.*;
-import javax.swing.border.BevelBorder;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.plaf.basic.BasicSplitPaneDivider;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
-import javax.swing.table.TableColumn;
-import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultCaret;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
@@ -17,21 +13,19 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 
 import static java.awt.GridBagConstraints.NORTH;
 
-public class BurpExtender implements IBurpExtender, ITab
+public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
 {
     private IBurpExtenderCallbacks callbacks;
     private IExtensionHelpers helpers;
+    private ISiteImportSummary siteImportSummary;
     private JPanel panel;
     private JCheckBox jSpiderCheckBox;
     private JCheckBox jAddToScopeCheckBox;
@@ -39,15 +33,14 @@ public class BurpExtender implements IBurpExtender, ITab
     private JTextArea jLogArea;
     private DefaultListModel<String> siteListModel = new DefaultListModel<>();
     private JList jSiteList;
-    JTextField jAddSiteText;
+    private JTextField jAddSiteText;
     private IListScannerLogger logger;
+    private ProgressMonitor progressMonitor;
+    private SiteImportWorkerTask siteImportWorkerTask;
 
     private static final Color BURPSUITE_ORANGE = new Color (255,102,51);
 
-    private UrlCallThreadManager threadManager;
-    private Thread siteImportThread;
-
-    public static void flattenSplitPane(JSplitPane jSplitPane) {
+    private static void flattenSplitPane(JSplitPane jSplitPane) {
 
         jSplitPane.setUI(new BasicSplitPaneUI() {
             public BasicSplitPaneDivider createDefaultDivider() {
@@ -113,8 +106,8 @@ public class BurpExtender implements IBurpExtender, ITab
 
         SwingUtilities.invokeLater(() -> {
 
-            panel = new JPanel(new GridBagLayout());
-            panel.setBorder(new EmptyBorder(15, 15, 15, 15));
+            this.panel = new JPanel(new GridBagLayout());
+            this.panel.setBorder(new EmptyBorder(15, 15, 15, 15));
 
             Font defaultFont = (Font)UIManager.getLookAndFeelDefaults().get("defaultFont");
             GridBagConstraints gbc = getDefaultGridBagConstraints();
@@ -125,7 +118,7 @@ public class BurpExtender implements IBurpExtender, ITab
             gbc.gridx = 0;
             gbc.gridy = 0;
             gbc.fill = GridBagConstraints.HORIZONTAL;
-            panel.add(titleLabel, gbc);
+            this.panel.add(titleLabel, gbc);
 
             // Site List Buttons
             JButton jPasteURLButton = new JButton ("Paste");
@@ -134,7 +127,7 @@ public class BurpExtender implements IBurpExtender, ITab
             gbc.gridy = 1;
             gbc.fill = GridBagConstraints.HORIZONTAL;
             jPasteURLButton.addActionListener(this::jPasteURLButtonClicked);
-            panel.add(jPasteURLButton, gbc);
+            this.panel.add(jPasteURLButton, gbc);
 
             // Loading area
             JButton jLoadButton = new JButton ("Load ...");
@@ -143,7 +136,7 @@ public class BurpExtender implements IBurpExtender, ITab
             gbc.gridy = 2;
             gbc.fill = GridBagConstraints.HORIZONTAL;
             jLoadButton.addActionListener(this::jButtonLoadClicked);
-            panel.add(jLoadButton, gbc);
+            this.panel.add(jLoadButton, gbc);
 
             JButton jRemoveButton = new JButton ("Remove");
             gbc = getDefaultGridBagConstraints();
@@ -151,7 +144,7 @@ public class BurpExtender implements IBurpExtender, ITab
             gbc.gridy = 3;
             gbc.fill = GridBagConstraints.HORIZONTAL;
             jRemoveButton.addActionListener(this::jRemoveButtonClicked);
-            panel.add(jRemoveButton, gbc);
+            this.panel.add(jRemoveButton, gbc);
 
             JButton jClearButton = new JButton ("Clear");
             gbc = getDefaultGridBagConstraints();
@@ -159,7 +152,7 @@ public class BurpExtender implements IBurpExtender, ITab
             gbc.gridy = 4;
             gbc.fill = GridBagConstraints.HORIZONTAL;
             jClearButton.addActionListener(this::jClearButtonClicked);
-            panel.add(jClearButton, gbc);
+            this.panel.add(jClearButton, gbc);
 
             // Site List area
             JPanel jSiteListPadder = new JPanel();
@@ -184,7 +177,7 @@ public class BurpExtender implements IBurpExtender, ITab
             gbc.weighty = 1;
             gbc.fill = GridBagConstraints.BOTH;
 
-            panel.add(jSiteListSplitPane, gbc);
+            this.panel.add(jSiteListSplitPane, gbc);
 
             JButton jAddSiteButton = new JButton ("Add");
             gbc = getDefaultGridBagConstraints();
@@ -192,7 +185,7 @@ public class BurpExtender implements IBurpExtender, ITab
             gbc.gridy = 6;
             gbc.fill = GridBagConstraints.HORIZONTAL;
             jAddSiteButton.addActionListener(this::jAddSiteButtonClicked);
-            panel.add(jAddSiteButton, gbc);
+            this.panel.add(jAddSiteButton, gbc);
 
             jAddSiteText = new JTextField("Enter a new item");
             jAddSiteText.setForeground(Color.GRAY);
@@ -218,7 +211,7 @@ public class BurpExtender implements IBurpExtender, ITab
             gbc.gridx = 1;
             gbc.gridy = 6;
             gbc.fill = GridBagConstraints.HORIZONTAL;
-            panel.add(jAddSiteText, gbc);
+            this.panel.add(jAddSiteText, gbc);
 
             JButton jImportButton = new JButton ("Import to Site List");
             gbc = getDefaultGridBagConstraints();
@@ -226,28 +219,28 @@ public class BurpExtender implements IBurpExtender, ITab
             gbc.gridy = 9;
             gbc.anchor = NORTH;
             jImportButton.addActionListener(this::jButtonImportClicked);
-            panel.add(jImportButton, gbc);
+            this.panel.add(jImportButton, gbc);
 
             jSpiderCheckBox = new JCheckBox("Spider URLs");
             gbc = getDefaultGridBagConstraints();
             gbc.gridx = 1;
             gbc.gridy = 7;
             gbc.fill = GridBagConstraints.HORIZONTAL;
-            panel.add(jSpiderCheckBox, gbc);
+            this.panel.add(jSpiderCheckBox, gbc);
 
             jAddToScopeCheckBox = new JCheckBox("Add to Scope");
             gbc = getDefaultGridBagConstraints();
             gbc.gridx = 1;
             gbc.gridy = 8;
             gbc.fill = GridBagConstraints.HORIZONTAL;
-            panel.add(jAddToScopeCheckBox, gbc);
+            this.panel.add(jAddToScopeCheckBox, gbc);
 
             jFollowRedirectCheckbox = new JCheckBox("Follow Redirections");
             gbc = getDefaultGridBagConstraints();
             gbc.gridx = 2;
             gbc.gridy = 7;
             gbc.fill = GridBagConstraints.HORIZONTAL;
-            panel.add(jFollowRedirectCheckbox, gbc);
+            this.panel.add(jFollowRedirectCheckbox, gbc);
 
             // Log area
             JLabel jLogLabel = new JLabel("Log");
@@ -255,9 +248,10 @@ public class BurpExtender implements IBurpExtender, ITab
             gbc.gridx = 1;
             gbc.gridy = 10;
             gbc.fill = GridBagConstraints.HORIZONTAL;
-            panel.add(jLogLabel, gbc);
+            this.panel.add(jLogLabel, gbc);
 
             jLogArea = new JTextArea ();
+            jLogArea.setEditable(false);
             JScrollPane jLogAreaScrollPanel = new JScrollPane(jLogArea);
             DefaultCaret caret = (DefaultCaret) jLogArea.getCaret();
             caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
@@ -282,12 +276,12 @@ public class BurpExtender implements IBurpExtender, ITab
             gbc.weightx = 1;
             gbc.weighty = 1;
             gbc.fill = GridBagConstraints.BOTH;
-            panel.add(jLogAreaSplitPane, gbc);
+            this.panel.add(jLogAreaSplitPane, gbc);
 
 
             this.logger = new ListScannerLogger(jLogArea);
 
-            callbacks.addSuiteTab(BurpExtender.this);
+            this.callbacks.addSuiteTab(BurpExtender.this);
         });
 
     }
@@ -378,22 +372,32 @@ public class BurpExtender implements IBurpExtender, ITab
         // let's just grab each line as we need it
         List<String> sites = new ArrayList<>();
 
-        for (int i = 0; i<siteListModel.size();i++){
+        for (int i = 0; i < siteListModel.size(); i++) {
             sites.add(siteListModel.get(i));
         }
+
+        siteImportSummary = new SiteImportSummary();
 
         SiteImportSettings settings = new SiteImportSettings();
         settings.followRedirects = jFollowRedirectCheckbox.isSelected();
         settings.deepScan = jSpiderCheckBox.isSelected();
         settings.addToScope = jAddToScopeCheckBox.isSelected();
 
-        allocateSitesToThreads(sites, settings);
+        createAndShowSiteWorker(sites, settings);
     }
 
-    private void allocateSitesToThreads(List<String> sites, SiteImportSettings settings) {
-        this.threadManager = new UrlCallThreadManager(this.helpers, this.callbacks, this.logger, sites, settings);
-        this.siteImportThread = new Thread(threadManager);
-        this.siteImportThread.start();
+    private void createAndShowSiteWorker(List<String> sites, SiteImportSettings settings) {
+
+        setPanelEnabledStatus(false);
+
+        progressMonitor = new ProgressMonitor(this.getUiComponent(),
+                "Importing sites",
+                "", 0, 100);
+        progressMonitor.setProgress(0);
+
+        siteImportWorkerTask = new SiteImportWorkerTask(helpers, callbacks, logger, siteImportSummary,  sites, settings);
+        siteImportWorkerTask.addPropertyChangeListener(this);
+        siteImportWorkerTask.execute();
     }
 
     @Override
@@ -404,5 +408,36 @@ public class BurpExtender implements IBurpExtender, ITab
     @Override
     public Component getUiComponent() {
         return panel;
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+
+        String propertyChange = evt.getPropertyName();
+
+        if (propertyChange.equals("progress")){
+            int progress = (Integer) evt.getNewValue();
+            progressMonitor.setProgress(progress);
+        }
+
+        if (propertyChange.equals("completed")){
+            logger.Log(siteImportSummary.toString());
+            setPanelEnabledStatus(true);
+        }
+
+        if (progressMonitor.isCanceled() || siteImportWorkerTask.isDone()) {
+            if (progressMonitor.isCanceled()) {
+                siteImportWorkerTask.cancel(true);
+            }
+        }
+    }
+
+    private void setPanelEnabledStatus(boolean enabled){
+        Component[] components = panel.getComponents();
+
+        for(int i = 0; i < components.length; i++) {
+            components[i].setEnabled(enabled);
+        }
+
     }
 }
