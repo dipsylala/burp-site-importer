@@ -31,13 +31,21 @@ public class SiteImportSummary implements ISiteImportSummary {
 
         sb.append("Bad URLS: ").append(System.lineSeparator());
 
-        for (String site : this.badURLs){
-            sb.append(site).append(System.lineSeparator());
+        if (this.badURLs.isEmpty()) {
+            sb.append("None").append(System.lineSeparator());
+        } else {
+            for (String site : this.badURLs) {
+                sb.append(site).append(System.lineSeparator());
+            }
         }
 
         sb.append("Unreachable Sites: ").append(System.lineSeparator());
-        for (String site : this.unreachableSites){
-            sb.append(site).append(System.lineSeparator());
+        if (this.unreachableSites.isEmpty()) {
+            sb.append("None").append(System.lineSeparator());
+        } else {
+            for (String site : this.unreachableSites) {
+                sb.append(site).append(System.lineSeparator());
+            }
         }
 
         return sb.toString();

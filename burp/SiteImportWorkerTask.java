@@ -15,7 +15,12 @@ public class SiteImportWorkerTask extends SwingWorker<Void, Void> {
     private ISiteImportSummary summary;
     private List<String> sites;
 
-    SiteImportWorkerTask(IExtensionHelpers helpers, IBurpExtenderCallbacks callbacks, IListScannerLogger logger, ISiteImportSummary summary, List<String> sites, SiteImportSettings settings) {
+    SiteImportWorkerTask(IExtensionHelpers helpers,
+                         IBurpExtenderCallbacks callbacks,
+                         IListScannerLogger logger,
+                         ISiteImportSummary summary,
+                         List<String> sites,
+                         SiteImportSettings settings) {
         this.logger = logger;
         this.summary = summary;
         this.sites = sites;
@@ -42,20 +47,23 @@ public class SiteImportWorkerTask extends SwingWorker<Void, Void> {
 
                 setProgress((int) ((executor.getCompletedTaskCount() * 100) / executor.getTaskCount()));
             } catch (InterruptedException e) {
-                logger.Log("Stop Requested");
+                logger.log("Stop Requested");
                 executor.shutdown();
                 try {
                     executor.awaitTermination(1, TimeUnit.SECONDS);
                 } catch (InterruptedException e1) {
                     e1.printStackTrace();
                 }
-                logger.Log("Stopping NOW");
+                logger.log("Stopping NOW");
                 executor.shutdownNow();
                 break;
             }
         }
 
-        executor.shutdown();
+        if (!executor.isShutdown()){
+            executor.shutdown();
+        }
+
         firePropertyChange("completed", false, true);
 
         return null;

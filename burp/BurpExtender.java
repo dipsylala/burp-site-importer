@@ -1,5 +1,6 @@
 package burp;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
@@ -7,6 +8,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.plaf.basic.BasicSplitPaneDivider;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
 import javax.swing.text.DefaultCaret;
+import javax.swing.text.html.StyleSheet;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -16,6 +18,9 @@ import java.awt.event.FocusListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,9 +35,8 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
     private JCheckBox jSpiderCheckBox;
     private JCheckBox jAddToScopeCheckBox;
     private JCheckBox jFollowRedirectCheckbox;
-    private JTextArea jLogArea;
     private DefaultListModel<String> siteListModel = new DefaultListModel<>();
-    private JList jSiteList;
+    private JList<String> jSiteList;
     private JTextField jAddSiteText;
     private IListScannerLogger logger;
     private ProgressMonitor progressMonitor;
@@ -104,186 +108,9 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
 
         callbacks.setExtensionName("Site Import Extension");
 
-        SwingUtilities.invokeLater(() -> {
-
-            this.panel = new JPanel(new GridBagLayout());
-            this.panel.setBorder(new EmptyBorder(15, 15, 15, 15));
-
-            Font defaultFont = (Font)UIManager.getLookAndFeelDefaults().get("defaultFont");
-            GridBagConstraints gbc = getDefaultGridBagConstraints();
-
-            JLabel titleLabel = new JLabel("Site Import");
-            titleLabel.setFont(new Font("Tahoma", Font.BOLD, (int) (defaultFont.getSize() * 1.2)));
-            titleLabel.setForeground(BURPSUITE_ORANGE);
-            gbc.gridx = 0;
-            gbc.gridy = 0;
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-            this.panel.add(titleLabel, gbc);
-
-            // Site List Buttons
-            JButton jPasteURLButton = new JButton ("Paste");
-            gbc = getDefaultGridBagConstraints();
-            gbc.gridx = 0;
-            gbc.gridy = 1;
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-            jPasteURLButton.addActionListener(this::jPasteURLButtonClicked);
-            this.panel.add(jPasteURLButton, gbc);
-
-            // Loading area
-            JButton jLoadButton = new JButton ("Load ...");
-            gbc = getDefaultGridBagConstraints();
-            gbc.gridx = 0;
-            gbc.gridy = 2;
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-            jLoadButton.addActionListener(this::jButtonLoadClicked);
-            this.panel.add(jLoadButton, gbc);
-
-            JButton jRemoveButton = new JButton ("Remove");
-            gbc = getDefaultGridBagConstraints();
-            gbc.gridx = 0;
-            gbc.gridy = 3;
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-            jRemoveButton.addActionListener(this::jRemoveButtonClicked);
-            this.panel.add(jRemoveButton, gbc);
-
-            JButton jClearButton = new JButton ("Clear");
-            gbc = getDefaultGridBagConstraints();
-            gbc.gridx = 0;
-            gbc.gridy = 4;
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-            jClearButton.addActionListener(this::jClearButtonClicked);
-            this.panel.add(jClearButton, gbc);
-
-            // Site List area
-            JPanel jSiteListPadder = new JPanel();
-
-            jSiteList = new JList(siteListModel);
-            JScrollPane jSiteListScrollPane = new JScrollPane(jSiteList);
-            JSplitPane jSiteListSplitPane = new JSplitPane();
-            jSiteListSplitPane.setLeftComponent(jSiteListScrollPane);
-            jSiteListSplitPane.setRightComponent(jSiteListPadder);
-            jSiteListSplitPane.setDividerLocation(300);
-            jSiteListSplitPane.setOneTouchExpandable(false);
-            jSiteListSplitPane.setDividerSize(10);
-            jSiteListSplitPane.setMinimumSize(new Dimension(100,100));
-
-            flattenSplitPane(jSiteListSplitPane);
-            gbc = getDefaultGridBagConstraints();
-            gbc.gridheight = 5;
-            gbc.gridwidth = 3;
-            gbc.gridx = 1;
-            gbc.gridy = 1;
-            gbc.weightx = 0;
-            gbc.weighty = 1;
-            gbc.fill = GridBagConstraints.BOTH;
-
-            this.panel.add(jSiteListSplitPane, gbc);
-
-            JButton jAddSiteButton = new JButton ("Add");
-            gbc = getDefaultGridBagConstraints();
-            gbc.gridx = 0;
-            gbc.gridy = 6;
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-            jAddSiteButton.addActionListener(this::jAddSiteButtonClicked);
-            this.panel.add(jAddSiteButton, gbc);
-
-            jAddSiteText = new JTextField("Enter a new item");
-            jAddSiteText.setForeground(Color.GRAY);
-            jAddSiteText.addFocusListener(new FocusListener() {
-                @Override
-                public void focusGained(FocusEvent e) {
-                    if (jAddSiteText.getText().equals("Enter a new item")) {
-                        jAddSiteText.setText("");
-                        jAddSiteText.setForeground(Color.BLACK);
-                    }
-                }
-                @Override
-                public void focusLost(FocusEvent e) {
-                    if (jAddSiteText.getText().isEmpty()) {
-                        jAddSiteText.setForeground(Color.GRAY);
-                        jAddSiteText.setText("Enter a new item");
-                    }
-                }
-            });
-
-            gbc = getDefaultGridBagConstraints();
-            gbc.gridwidth = 2;
-            gbc.gridx = 1;
-            gbc.gridy = 6;
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-            this.panel.add(jAddSiteText, gbc);
-
-            JButton jImportButton = new JButton ("Import to Site List");
-            gbc = getDefaultGridBagConstraints();
-            gbc.gridx = 0;
-            gbc.gridy = 9;
-            gbc.anchor = NORTH;
-            jImportButton.addActionListener(this::jButtonImportClicked);
-            this.panel.add(jImportButton, gbc);
-
-            jSpiderCheckBox = new JCheckBox("Spider URLs");
-            gbc = getDefaultGridBagConstraints();
-            gbc.gridx = 1;
-            gbc.gridy = 7;
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-            this.panel.add(jSpiderCheckBox, gbc);
-
-            jAddToScopeCheckBox = new JCheckBox("Add to Scope");
-            gbc = getDefaultGridBagConstraints();
-            gbc.gridx = 1;
-            gbc.gridy = 8;
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-            this.panel.add(jAddToScopeCheckBox, gbc);
-
-            jFollowRedirectCheckbox = new JCheckBox("Follow Redirections");
-            gbc = getDefaultGridBagConstraints();
-            gbc.gridx = 2;
-            gbc.gridy = 7;
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-            this.panel.add(jFollowRedirectCheckbox, gbc);
-
-            // Log area
-            JLabel jLogLabel = new JLabel("Log");
-            gbc = getDefaultGridBagConstraints();
-            gbc.gridx = 1;
-            gbc.gridy = 10;
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-            this.panel.add(jLogLabel, gbc);
-
-            jLogArea = new JTextArea ();
-            jLogArea.setEditable(false);
-            JScrollPane jLogAreaScrollPanel = new JScrollPane(jLogArea);
-            DefaultCaret caret = (DefaultCaret) jLogArea.getCaret();
-            caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
-
-            JPanel jLogAreaPadder = new JPanel();
-
-            JSplitPane jLogAreaSplitPane = new JSplitPane();
-            jLogAreaSplitPane.setLeftComponent(jLogAreaScrollPanel);
-            jLogAreaSplitPane.setRightComponent(jLogAreaPadder);
-            jLogAreaSplitPane.setDividerLocation(500);
-            jLogAreaSplitPane.setOneTouchExpandable(false);
-            jLogAreaSplitPane.setDividerSize(10);
-            jLogAreaSplitPane.setMinimumSize(new Dimension(100,100));
-
-            flattenSplitPane(jLogAreaSplitPane);
-            gbc = getDefaultGridBagConstraints();
-
-            gbc.gridheight = 1;
-            gbc.gridwidth = 3;
-            gbc.gridx = 1;
-            gbc.gridy = 11;
-            gbc.weightx = 1;
-            gbc.weighty = 1;
-            gbc.fill = GridBagConstraints.BOTH;
-            this.panel.add(jLogAreaSplitPane, gbc);
-
-
-            this.logger = new ListScannerLogger(jLogArea);
-
-            this.callbacks.addSuiteTab(BurpExtender.this);
-        });
-
+        SwingUtilities.invokeLater(
+            this::createUI
+        );
     }
 
     private void jAddSiteButtonClicked(ActionEvent actionEvent) {
@@ -298,7 +125,11 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
 
     private void jClearButtonClicked(ActionEvent actionEvent) {
         siteListModel.removeAllElements();
-        this.logger.Log("Sites cleared");
+        this.logger.log("Sites cleared");
+    }
+
+    private void jButtonClearLogClicked(ActionEvent actionEvent) {
+        this.logger.clear();
     }
 
     private void jPasteURLButtonClicked(ActionEvent actionEvent) {
@@ -306,10 +137,10 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
         try {
             data = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
         } catch (UnsupportedFlavorException e) {
-            this.logger.Log("No text available");
+            this.logger.log("No text available");
             return;
         } catch (IOException e) {
-            this.logger.Log("Could not read from clipboard");
+            this.logger.log("Could not read from clipboard");
             return;
         }
 
@@ -317,11 +148,16 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
 
         String[] sites = data.split("\n");
         for (String site : sites){
+            String trimmedSite = site.trim();
+            if (trimmedSite.length() == 0){
+                continue;
+            }
+
             lineCount ++;
-            siteListModel.addElement(site.trim());
+            siteListModel.addElement(trimmedSite);
         }
 
-        this.logger.Log(lineCount + " sites loaded from clipboard");
+        this.logger.log(lineCount + " sites loaded from clipboard");
     }
 
     private void jRemoveButtonClicked(ActionEvent actionEvent) {
@@ -338,12 +174,12 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
         FileNameExtensionFilter filter = new FileNameExtensionFilter("Text Files", "txt");
         fileChooser.setFileFilter(filter);
 
-        if (fileChooser.showOpenDialog(this.getUiComponent()) != JFileChooser.APPROVE_OPTION) {
+        if (fileChooser.showOpenDialog(this.panel) != JFileChooser.APPROVE_OPTION) {
             return;
         }
 
         File file = fileChooser.getSelectedFile();
-        this.logger.Log("Loading " + file.getName());
+        this.logger.log("Loading " + file.getName());
 
         int lineCount = 0;
 
@@ -357,19 +193,26 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
                 line = br.readLine();
             }
 
-            this.logger.Log(lineCount + " sites loaded");
+            this.logger.log(lineCount + " sites loaded");
         } catch (FileNotFoundException e) {
-            this.logger.Log("File not found: " + file.getName());
-            this.logger.Log("File not found: " + file.getName());
+            this.logger.log("File not found: " + file.getName());
+            this.logger.log("File not found: " + file.getName());
         } catch (IOException e) {
-            this.logger.Log("Error reading file: " + file.getName());
+            this.logger.log("Error reading file: " + file.getName());
         }
     }
 
+    private void jButtonHelpClicked(ActionEvent actionEvent) {
+
+        InputStream is = this.getClass().getResourceAsStream("/resources/help.html");
+        java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
+        String helpText = s.next();
+        new PopUpHelp(helpText, (Component)actionEvent.getSource());
+    }
+
+
     private void jButtonImportClicked(ActionEvent actionEvent) {
 
-        // text area could be quite big, so rather than loading it all into an array based on \n
-        // let's just grab each line as we need it
         List<String> sites = new ArrayList<>();
 
         for (int i = 0; i < siteListModel.size(); i++) {
@@ -390,7 +233,7 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
 
         setPanelEnabledStatus(false);
 
-        progressMonitor = new ProgressMonitor(this.getUiComponent(),
+        progressMonitor = new ProgressMonitor(this.panel,
                 "Importing sites",
                 "", 0, 100);
         progressMonitor.setProgress(0);
@@ -421,7 +264,11 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
         }
 
         if (propertyChange.equals("completed")){
-            logger.Log(siteImportSummary.toString());
+            logger.log("------------------------------------" + System.lineSeparator() +
+                       "Import Summary   "  + System.lineSeparator() +
+                       "------------------------------------" + System.lineSeparator());
+
+            logger.log(siteImportSummary.toString());
             setPanelEnabledStatus(true);
         }
 
@@ -435,9 +282,219 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
     private void setPanelEnabledStatus(boolean enabled){
         Component[] components = panel.getComponents();
 
-        for(int i = 0; i < components.length; i++) {
-            components[i].setEnabled(enabled);
+        for (Component component : components) {
+            component.setEnabled(enabled);
         }
+
+    }
+
+    private void createUI() {
+        this.panel = new JPanel(new GridBagLayout());
+        this.panel.setBorder(new EmptyBorder(15, 15, 15, 15));
+
+        Font defaultFont = (Font) UIManager.getLookAndFeelDefaults().get("defaultFont");
+        GridBagConstraints gbc = getDefaultGridBagConstraints();
+
+        try {
+            JButton jHelpButton = new JButton("");
+            jHelpButton.setFocusPainted(false);
+            jHelpButton.setPreferredSize(new Dimension(30, 30));
+            InputStream is = getClass().getResourceAsStream("/resources/question_mark.png");
+            Image image = ImageIO.read(is);
+            Image resizedImage = image.getScaledInstance(14, 18,Image.SCALE_SMOOTH );
+            jHelpButton.setIcon(new ImageIcon(resizedImage));
+            jHelpButton.addActionListener(this::jButtonHelpClicked);
+
+            gbc = getDefaultGridBagConstraints();
+            gbc.gridx = 0;
+            gbc.gridy = 0;
+            this.panel.add(jHelpButton, gbc);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        JLabel titleLabel = new JLabel("Site Import");
+        titleLabel.setFont(new Font("Tahoma", Font.BOLD, (int) (defaultFont.getSize() * 1.2)));
+        titleLabel.setForeground(BURPSUITE_ORANGE);
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        this.panel.add(titleLabel, gbc);
+
+        // Site List Buttons
+        JButton jPasteURLButton = new JButton("Paste");
+        gbc = getDefaultGridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        jPasteURLButton.addActionListener(this::jPasteURLButtonClicked);
+        this.panel.add(jPasteURLButton, gbc);
+
+        // Loading area
+        JButton jLoadButton = new JButton("Load ...");
+        gbc = getDefaultGridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 2;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        jLoadButton.addActionListener(this::jButtonLoadClicked);
+        this.panel.add(jLoadButton, gbc);
+
+        JButton jRemoveButton = new JButton("Remove");
+        gbc = getDefaultGridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 3;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        jRemoveButton.addActionListener(this::jRemoveButtonClicked);
+        this.panel.add(jRemoveButton, gbc);
+
+        JButton jClearButton = new JButton("Clear");
+        gbc = getDefaultGridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 4;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        jClearButton.addActionListener(this::jClearButtonClicked);
+        this.panel.add(jClearButton, gbc);
+
+        // Site List area
+        JPanel jSiteListPadder = new JPanel();
+
+        jSiteList = new JList<>(siteListModel);
+        JScrollPane jSiteListScrollPane = new JScrollPane(jSiteList);
+        JSplitPane jSiteListSplitPane = new JSplitPane();
+        jSiteListSplitPane.setLeftComponent(jSiteListScrollPane);
+        jSiteListSplitPane.setRightComponent(jSiteListPadder);
+        jSiteListSplitPane.setDividerLocation(300);
+        jSiteListSplitPane.setOneTouchExpandable(false);
+        jSiteListSplitPane.setDividerSize(10);
+        jSiteListSplitPane.setMinimumSize(new Dimension(100, 100));
+
+        flattenSplitPane(jSiteListSplitPane);
+        gbc = getDefaultGridBagConstraints();
+        gbc.gridheight = 5;
+        gbc.gridwidth = 3;
+        gbc.gridx = 2;
+        gbc.gridy = 1;
+        gbc.weightx = 0;
+        gbc.weighty = 1;
+        gbc.fill = GridBagConstraints.BOTH;
+
+        this.panel.add(jSiteListSplitPane, gbc);
+
+        JButton jAddSiteButton = new JButton("Add");
+        gbc = getDefaultGridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 6;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        jAddSiteButton.addActionListener(this::jAddSiteButtonClicked);
+        this.panel.add(jAddSiteButton, gbc);
+
+        jAddSiteText = new JTextField("Enter a new item");
+        jAddSiteText.setForeground(Color.GRAY);
+        jAddSiteText.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (jAddSiteText.getText().equals("Enter a new item")) {
+                    jAddSiteText.setText("");
+                    jAddSiteText.setForeground(Color.BLACK);
+                }
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (jAddSiteText.getText().isEmpty()) {
+                    jAddSiteText.setForeground(Color.GRAY);
+                    jAddSiteText.setText("Enter a new item");
+                }
+            }
+        });
+
+        gbc = getDefaultGridBagConstraints();
+        gbc.gridwidth = 2;
+        gbc.gridx = 2;
+        gbc.gridy = 6;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        this.panel.add(jAddSiteText, gbc);
+
+        JButton jImportButton = new JButton("Import to Site List");
+        gbc = getDefaultGridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 9;
+        gbc.anchor = NORTH;
+        jImportButton.addActionListener(this::jButtonImportClicked);
+        this.panel.add(jImportButton, gbc);
+
+        jSpiderCheckBox = new JCheckBox("Spider URLs");
+        gbc = getDefaultGridBagConstraints();
+        gbc.gridx = 2;
+        gbc.gridy = 7;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        this.panel.add(jSpiderCheckBox, gbc);
+
+        jAddToScopeCheckBox = new JCheckBox("Add to Scope");
+        gbc = getDefaultGridBagConstraints();
+        gbc.gridx = 2;
+        gbc.gridy = 8;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        this.panel.add(jAddToScopeCheckBox, gbc);
+
+        jFollowRedirectCheckbox = new JCheckBox("Follow Redirections");
+        gbc = getDefaultGridBagConstraints();
+        gbc.gridx = 3;
+        gbc.gridy = 7;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        this.panel.add(jFollowRedirectCheckbox, gbc);
+
+        // Log area
+        JLabel jLogLabel = new JLabel("Log");
+        gbc = getDefaultGridBagConstraints();
+        gbc.gridx = 2;
+        gbc.gridy = 10;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        this.panel.add(jLogLabel, gbc);
+
+        JButton jClearLogButton = new JButton("Clear");
+        gbc = getDefaultGridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 11;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = NORTH;
+        jClearLogButton.addActionListener(this::jButtonClearLogClicked);
+        this.panel.add(jClearLogButton, gbc);
+
+        JTextArea jLogArea = new JTextArea();
+        jLogArea.setEditable(false);
+        JScrollPane jLogAreaScrollPanel = new JScrollPane(jLogArea);
+        DefaultCaret caret = (DefaultCaret) jLogArea.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+
+        JPanel jLogAreaPadder = new JPanel();
+
+        JSplitPane jLogAreaSplitPane = new JSplitPane();
+        jLogAreaSplitPane.setLeftComponent(jLogAreaScrollPanel);
+        jLogAreaSplitPane.setRightComponent(jLogAreaPadder);
+        jLogAreaSplitPane.setDividerLocation(500);
+        jLogAreaSplitPane.setOneTouchExpandable(false);
+        jLogAreaSplitPane.setDividerSize(10);
+        jLogAreaSplitPane.setMinimumSize(new Dimension(100, 100));
+
+        flattenSplitPane(jLogAreaSplitPane);
+        gbc = getDefaultGridBagConstraints();
+
+        gbc.gridheight = 1;
+        gbc.gridwidth = 3;
+        gbc.gridx = 2;
+        gbc.gridy = 11;
+        gbc.weightx = 1;
+        gbc.weighty = 1;
+        gbc.fill = GridBagConstraints.BOTH;
+        this.panel.add(jLogAreaSplitPane, gbc);
+
+
+
+        this.logger = new ListScannerLogger(jLogArea);
+
+        this.callbacks.addSuiteTab(BurpExtender.this);
 
     }
 }

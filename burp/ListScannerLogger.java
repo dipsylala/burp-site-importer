@@ -10,7 +10,8 @@ class ListScannerLogger implements IListScannerLogger {
         this.logger = logger;
     }
 
-    public synchronized void Log (String message){
+    public synchronized void log (String message){
         logger.append(message + System.lineSeparator());
     }
+    public synchronized void clear () { logger.setText(""); }
 }

@@ -21,4 +21,5 @@ public class ListScannerForm {
     private JButton jRemoveButton;
     private JButton jPasteURLsButton;
     private JButton jClearSiteButton;
+    private JButton jClearLogButton;
 }

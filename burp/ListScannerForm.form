@@ -191,6 +191,15 @@
           <toolTipText value="Enter a new item"/>
         </properties>
       </component>
+      <component id="892ab" class="javax.swing.JButton" binding="jClearLogButton">
+        <constraints>
+          <grid row="11" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false"/>
+          <gridbag weightx="0.0" weighty="0.0"/>
+        </constraints>
+        <properties>
+          <text value="Clear"/>
+        </properties>
+      </component>
     </children>
   </grid>
 </form>

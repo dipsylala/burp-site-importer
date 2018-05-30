@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- <link rel="stylesheet" href="help.css"> -->
+</head>
+<body>
+
+<div class="header"><h2>Site Import</h2></div>
+<hr/>
+<div class="content">
+    <p>
+        A tool to bulk load sites into the <strong>Site Map</strong>.
+        <strong>Format:</strong> Sites should include the protocol, the site, and optionally a path. If the port isn't specified, the default is used for the protocol.
+    </p>
+    <ul>
+        <li>
+            <strong>Paste</strong> - Takes values on the clipboard and adds them to the list.
+        </li>
+        <li>
+            <strong>Load...</strong> - Loads values from a file. Text file with one URL per line.
+        </li>
+        <li>
+            <strong>Remove</strong> - Remove the selected values from the list.
+        </li>
+        <li>
+            <strong>Clear</strong> - Empties the list.
+        </li>
+        <li>
+            <strong>Add</strong> - Allows the user to add a single line to the list.
+        </li>
+<hr/>
+
+        <li>
+            <strong>Import to Site List</strong> - Takes the values in the site list, visits the site, and adds the request/response to the site list.
+        </li>
+
+        <li>
+            <strong>Clear (log)</strong> - Clears the log screen.
+        </li>
+
+        <h4>Options</h4>
+
+        <li>
+            <strong>Spider URLs</strong> - when the site is added to the site list, it's automatically added to the spider list too.
+        </li>
+        <li>
+            <strong>Follow Redirections</strong> - Anything in the 3xx Response range is analysed, and redirected according to the Location header. Redirection loops are detected.
+        </li>
+        <li>
+            <strong>Add to Scope</strong> - The URL is automatically added to the scope.
+        </li>
+</div>
+</body>
+</html>
