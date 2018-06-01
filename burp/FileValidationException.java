@@ -1,7 +1,7 @@
 package burp;
 
-public class FileValidationException extends Exception {
-    public FileValidationException(String message) {
+class FileValidationException extends Exception {
+    FileValidationException(String message) {
         super(message);
     }
 }

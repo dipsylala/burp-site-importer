@@ -1,6 +1,6 @@
 package burp;
 
-public class ProgressMessage {
+class ProgressMessage {
     long completed;
     long total;
 }

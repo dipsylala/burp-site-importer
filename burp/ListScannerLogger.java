@@ -3,7 +3,7 @@ package burp;
 import javax.swing.*;
 
 class ListScannerLogger implements IListScannerLogger {
-    private JTextArea logger;
+    private final JTextArea logger;
 
     ListScannerLogger(JTextArea logger){
 

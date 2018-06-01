@@ -6,14 +6,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class SiteImportWorker extends SwingWorker<Void, Void> {
+class SiteImportWorker extends SwingWorker<Void, Void> {
 
-    private IExtensionHelpers helpers;
-    private IBurpExtenderCallbacks callbacks;
-    private SiteImportSettings settings;
-    private IListScannerLogger logger;
-    private ISiteImportSummary summary;
-    private List<String> sites;
+    private final IExtensionHelpers helpers;
+    private final IBurpExtenderCallbacks callbacks;
+    private final SiteImportSettings settings;
+    private final IListScannerLogger logger;
+    private final ISiteImportSummary summary;
+    private final List<String> sites;
 
     SiteImportWorker(IExtensionHelpers helpers,
                      IBurpExtenderCallbacks callbacks,

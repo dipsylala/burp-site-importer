@@ -8,8 +8,6 @@ import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
@@ -27,7 +25,7 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
     private JCheckBox jSpiderCheckBox;
     private JCheckBox jAddToScopeCheckBox;
     private JCheckBox jFollowRedirectCheckbox;
-    private DefaultListModel<String> siteListModel = new DefaultListModel<>();
+    private final DefaultListModel<String> siteListModel = new DefaultListModel<>();
     private JList<String> jSiteList;
     private JPlaceholderTextField jAddSiteText;
     private IListScannerLogger logger;

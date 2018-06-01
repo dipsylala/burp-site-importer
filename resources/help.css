@@ -8,17 +8,10 @@ body {
     height: 100%;
 }
 
-#container {
-    width: 930px;
-    padding: 0 15px;
-    margin: 20px auto;
-    background-color: #ffffff;
-}
-
 a {
     color: #ff6633;
     text-decoration: none;
-    transform: 0.3s;
+    /* transform: 0.3s;*/
 }
 
 h1 {
@@ -50,18 +43,20 @@ strong {
     color: #ff6633;
 }
 
-​.header {
+/*
+.header {
     height: 50px;
     overflow: auto;
     position: absolute;
     width: 100%;
 }
 
-.content {
+div.content {
     position: absolute;
     top: 50px;
-    left: 0px;
-    right: 0px;
-    bottom: 0px;
+    left: 0;
+    right: 0;
+    bottom: 0;
     overflow-y: scroll;
 }
+*/

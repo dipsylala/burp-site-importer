@@ -7,16 +7,16 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SiteCallRunnable implements Runnable {
+class SiteCallRunnable implements Runnable {
 
-    private IExtensionHelpers helpers;
-    private IBurpExtenderCallbacks callbacks;
-    private ISiteImportSummary summary;
-    private String site;
+    private final IExtensionHelpers helpers;
+    private final IBurpExtenderCallbacks callbacks;
+    private final ISiteImportSummary summary;
+    private final String site;
     private final boolean addToScope;
-    private boolean deepScan;
-    private boolean followRedirects;
-    private IListScannerLogger logger;
+    private final boolean deepScan;
+    private final boolean followRedirects;
+    private final IListScannerLogger logger;
 
     SiteCallRunnable(IExtensionHelpers helpers,
                      IBurpExtenderCallbacks callbacks,

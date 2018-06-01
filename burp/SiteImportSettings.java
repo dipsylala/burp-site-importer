@@ -1,7 +1,7 @@
 package burp;
 
-public class SiteImportSettings {
-    public boolean addToScope;
-    public boolean deepScan;
-    public boolean followRedirects;
+class SiteImportSettings {
+    boolean addToScope;
+    boolean deepScan;
+    boolean followRedirects;
 }

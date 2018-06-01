@@ -5,8 +5,8 @@ import java.util.List;
 
 public class SiteImportSummary implements ISiteImportSummary {
 
-    private List<String> unreachableSites;
-    private List<String> badURLs;
+    private final List<String> unreachableSites;
+    private final List<String> badURLs;
 
     SiteImportSummary(){
         this.unreachableSites = new ArrayList<>();

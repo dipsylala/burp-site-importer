@@ -11,9 +11,9 @@ import java.awt.event.FocusListener;
 import java.awt.event.WindowEvent;
 import java.io.*;
 
-public class PopUpHelp implements FocusListener {
+class PopUpHelp implements FocusListener {
 
-    JFrame popupFrame;
+    private final JFrame popupFrame;
 
     PopUpHelp(String body, Component baseComponent) {
         JEditorPane jEditorPane = new JEditorPane();
@@ -35,7 +35,8 @@ public class PopUpHelp implements FocusListener {
             styleSheet.loadRules(r, null);
             r.close();
         } catch (IOException e) {
-
+            StyleSheet styleSheet = kit.getStyleSheet();
+            styleSheet.addRule("body { background: white; color: #404042;}");
         }
 
         Document doc = kit.createDefaultDocument();
