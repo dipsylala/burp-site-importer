@@ -28,8 +28,6 @@ public class PopUpHelp implements FocusListener {
         DefaultCaret caret = (DefaultCaret)jEditorPane.getCaret();
         caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
 
-        // add some styles to the html
-
         try {
             StyleSheet styleSheet = kit.getStyleSheet();
             InputStream is = getClass().getResourceAsStream("/resources/help.css");
@@ -47,9 +45,7 @@ public class PopUpHelp implements FocusListener {
         popupFrame = new JFrame("");
         popupFrame.setUndecorated(true);
         popupFrame.getContentPane().add(scrollPane, BorderLayout.CENTER);
-
         popupFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-
         popupFrame.setSize(new Dimension(660, 265));
 
         // Set the location according to the component that called it

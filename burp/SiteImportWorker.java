@@ -6,7 +6,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class SiteImportWorkerTask extends SwingWorker<Void, Void> {
+public class SiteImportWorker extends SwingWorker<Void, Void> {
 
     private IExtensionHelpers helpers;
     private IBurpExtenderCallbacks callbacks;
@@ -15,12 +15,12 @@ public class SiteImportWorkerTask extends SwingWorker<Void, Void> {
     private ISiteImportSummary summary;
     private List<String> sites;
 
-    SiteImportWorkerTask(IExtensionHelpers helpers,
-                         IBurpExtenderCallbacks callbacks,
-                         IListScannerLogger logger,
-                         ISiteImportSummary summary,
-                         List<String> sites,
-                         SiteImportSettings settings) {
+    SiteImportWorker(IExtensionHelpers helpers,
+                     IBurpExtenderCallbacks callbacks,
+                     IListScannerLogger logger,
+                     ISiteImportSummary summary,
+                     List<String> sites,
+                     SiteImportSettings settings) {
         this.logger = logger;
         this.summary = summary;
         this.sites = sites;
@@ -35,17 +35,36 @@ public class SiteImportWorkerTask extends SwingWorker<Void, Void> {
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(10);
 
         for (String site : this.sites) {
-            UrlCallRunner urlCall = new UrlCallRunner(this.helpers, this.callbacks, this.logger, this.summary, site, this.settings);
+            SiteCallRunnable urlCall = new SiteCallRunnable(this.helpers, this.callbacks, this.logger, this.summary, site, this.settings);
             executor.execute(urlCall);
         }
 
         long totalTasks = executor.getTaskCount();
 
+        int lastPercentage = 0;
+        long lastTaskCount = 0;
+
+        ProgressMessage progressMessage = new ProgressMessage();
+        progressMessage.total = totalTasks;
+
         while (executor.getCompletedTaskCount() < totalTasks) {
             try {
                 Thread.sleep(100);
 
-                setProgress((int) ((executor.getCompletedTaskCount() * 100) / executor.getTaskCount()));
+                long taskCount = executor.getCompletedTaskCount();
+                int newPercentage = (int)((taskCount * 100) / totalTasks);
+
+                if (taskCount!=lastTaskCount){
+                    progressMessage.completed = taskCount;
+                    firePropertyChange("taskscompleted", null, progressMessage);
+                    lastTaskCount = taskCount;
+                }
+
+                if (newPercentage!= lastPercentage){
+                    setProgress(newPercentage);
+                    lastPercentage = newPercentage;
+                }
+
             } catch (InterruptedException e) {
                 logger.log("Stop Requested");
                 executor.shutdown();

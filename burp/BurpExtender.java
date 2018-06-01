@@ -8,7 +8,6 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.plaf.basic.BasicSplitPaneDivider;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
 import javax.swing.text.DefaultCaret;
-import javax.swing.text.html.StyleSheet;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -18,9 +17,6 @@ import java.awt.event.FocusListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +36,7 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
     private JTextField jAddSiteText;
     private IListScannerLogger logger;
     private ProgressMonitor progressMonitor;
-    private SiteImportWorkerTask siteImportWorkerTask;
+    private SiteImportWorker siteImportWorkerTask;
 
     private static final Color BURPSUITE_ORANGE = new Color (255,102,51);
 
@@ -187,9 +183,13 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
             String line = br.readLine();
 
             while (line != null) {
-                lineCount++;
+                line = line.trim();
+                if (line.length() > 0) {
+                    lineCount++;
 
-                siteListModel.addElement(line);
+                    siteListModel.addElement(line);
+                }
+
                 line = br.readLine();
             }
 
@@ -236,9 +236,11 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
         progressMonitor = new ProgressMonitor(this.panel,
                 "Importing sites",
                 "", 0, 100);
-        progressMonitor.setProgress(0);
 
-        siteImportWorkerTask = new SiteImportWorkerTask(helpers, callbacks, logger, siteImportSummary,  sites, settings);
+        progressMonitor.setProgress(0);
+        progressMonitor.setNote("");
+
+        siteImportWorkerTask = new SiteImportWorker(helpers, callbacks, logger, siteImportSummary,  sites, settings);
         siteImportWorkerTask.addPropertyChangeListener(this);
         siteImportWorkerTask.execute();
     }
@@ -272,6 +274,11 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
             setPanelEnabledStatus(true);
         }
 
+        if (propertyChange.equals("taskscompleted")){
+            ProgressMessage progressMessage = (ProgressMessage)evt.getNewValue();
+            progressMonitor.setNote(progressMessage.completed + "/" + progressMessage.total);
+        }
+
         if (progressMonitor.isCanceled() || siteImportWorkerTask.isDone()) {
             if (progressMonitor.isCanceled()) {
                 siteImportWorkerTask.cancel(true);
@@ -282,10 +289,10 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
     private void setPanelEnabledStatus(boolean enabled){
         Component[] components = panel.getComponents();
 
+        // Don't need to recurse - it's a simple panel for the moment
         for (Component component : components) {
             component.setEnabled(enabled);
         }
-
     }
 
     private void createUI() {
@@ -489,8 +496,6 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
         gbc.weighty = 1;
         gbc.fill = GridBagConstraints.BOTH;
         this.panel.add(jLogAreaSplitPane, gbc);
-
-
 
         this.logger = new ListScannerLogger(jLogArea);
 
