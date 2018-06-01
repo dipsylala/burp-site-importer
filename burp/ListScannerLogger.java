@@ -5,7 +5,7 @@ import javax.swing.*;
 class ListScannerLogger implements IListScannerLogger {
     private JTextArea logger;
 
-    public ListScannerLogger(JTextArea logger){
+    ListScannerLogger(JTextArea logger){
 
         this.logger = logger;
     }

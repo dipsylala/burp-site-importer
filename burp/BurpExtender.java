@@ -1,12 +1,8 @@
 package burp;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
-import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.plaf.basic.BasicSplitPaneDivider;
-import javax.swing.plaf.basic.BasicSplitPaneUI;
 import javax.swing.text.DefaultCaret;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
@@ -33,62 +29,10 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
     private JCheckBox jFollowRedirectCheckbox;
     private DefaultListModel<String> siteListModel = new DefaultListModel<>();
     private JList<String> jSiteList;
-    private JTextField jAddSiteText;
+    private JPlaceholderTextField jAddSiteText;
     private IListScannerLogger logger;
     private ProgressMonitor progressMonitor;
     private SiteImportWorker siteImportWorkerTask;
-
-    private static final Color BURPSUITE_ORANGE = new Color (255,102,51);
-
-    private static void flattenSplitPane(JSplitPane jSplitPane) {
-
-        jSplitPane.setUI(new BasicSplitPaneUI() {
-            public BasicSplitPaneDivider createDefaultDivider() {
-                return new BasicSplitPaneDivider(this) {
-                    public void setBorder(Border b) {
-
-                    }
-
-                    public void paint(Graphics var1) {
-                        int[] coordX = new int[3];
-                        int[] coordY = new int[3];
-                        var1.setColor(this.getBackground());
-                        var1.fillRect(0, 0, this.getWidth(), this.getHeight());
-                        if (this.orientation == JSplitPane.VERTICAL_SPLIT) {
-                            int minHeight = Math.min(this.getHeight(), 10);
-                            int offset = (this.getHeight() / 2) - (minHeight / 2);
-
-                            coordX[0] = offset + minHeight;
-                            coordY[0] = minHeight;
-
-                            coordX[1] = offset + (minHeight * 2);
-                            coordY[1] = 0;
-
-                            coordX[2] = offset;
-                            coordY[2] = 0;
-                        } else {
-                            int minWidth = Math.min(this.getWidth(), 10);
-                            int offset = (this.getHeight() / 2) - (minWidth / 2);
-
-                            coordX[0] = 0;
-                            coordY[0] = offset;
-
-                            coordX[1] = minWidth;
-                            coordY[1] = (minWidth / 2) + offset;
-
-                            coordX[2] = 0;
-                            coordY[2] = offset + minWidth;
-                        }
-
-                        var1.setColor(BURPSUITE_ORANGE);
-                        var1.fillPolygon(coordX, coordY, 3);
-                    }
-                };
-            }
-        });
-
-        jSplitPane.setBorder(null);
-    }
 
     private GridBagConstraints getDefaultGridBagConstraints(){
         GridBagConstraints gbc = new GridBagConstraints();
@@ -265,7 +209,7 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
             progressMonitor.setProgress(progress);
         }
 
-        if (propertyChange.equals("completed")){
+        if (propertyChange.equals(Constants.ALL_SITES_COMPLETED)){
             logger.log("------------------------------------" + System.lineSeparator() +
                        "Import Summary   "  + System.lineSeparator() +
                        "------------------------------------" + System.lineSeparator());
@@ -274,15 +218,13 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
             setPanelEnabledStatus(true);
         }
 
-        if (propertyChange.equals("taskscompleted")){
+        if (propertyChange.equals(Constants.SITE_COMPLETED)){
             ProgressMessage progressMessage = (ProgressMessage)evt.getNewValue();
             progressMonitor.setNote(progressMessage.completed + "/" + progressMessage.total);
         }
 
-        if (progressMonitor.isCanceled() || siteImportWorkerTask.isDone()) {
-            if (progressMonitor.isCanceled()) {
-                siteImportWorkerTask.cancel(true);
-            }
+        if (progressMonitor.isCanceled()) {
+            siteImportWorkerTask.cancel(true);
         }
     }
 
@@ -300,30 +242,17 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
         this.panel.setBorder(new EmptyBorder(15, 15, 15, 15));
 
         Font defaultFont = (Font) UIManager.getLookAndFeelDefaults().get("defaultFont");
+
+        JBurpHelpButton jHelpButton = new JBurpHelpButton();
+        jHelpButton.addActionListener(this::jButtonHelpClicked);
         GridBagConstraints gbc = getDefaultGridBagConstraints();
-
-        try {
-            JButton jHelpButton = new JButton("");
-            jHelpButton.setFocusPainted(false);
-            jHelpButton.setPreferredSize(new Dimension(30, 30));
-            InputStream is = getClass().getResourceAsStream("/resources/question_mark.png");
-            Image image = ImageIO.read(is);
-            Image resizedImage = image.getScaledInstance(14, 18,Image.SCALE_SMOOTH );
-            jHelpButton.setIcon(new ImageIcon(resizedImage));
-            jHelpButton.addActionListener(this::jButtonHelpClicked);
-
-            gbc = getDefaultGridBagConstraints();
-            gbc.gridx = 0;
-            gbc.gridy = 0;
-            this.panel.add(jHelpButton, gbc);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        this.panel.add(jHelpButton, gbc);
 
         JLabel titleLabel = new JLabel("Site Import");
         titleLabel.setFont(new Font("Tahoma", Font.BOLD, (int) (defaultFont.getSize() * 1.2)));
-        titleLabel.setForeground(BURPSUITE_ORANGE);
+        titleLabel.setForeground(Constants.BURPSUITE_ORANGE);
         gbc.gridx = 1;
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -368,7 +297,8 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
 
         jSiteList = new JList<>(siteListModel);
         JScrollPane jSiteListScrollPane = new JScrollPane(jSiteList);
-        JSplitPane jSiteListSplitPane = new JSplitPane();
+
+        JBurpSplitPane jSiteListSplitPane = new JBurpSplitPane();
         jSiteListSplitPane.setLeftComponent(jSiteListScrollPane);
         jSiteListSplitPane.setRightComponent(jSiteListPadder);
         jSiteListSplitPane.setDividerLocation(300);
@@ -376,7 +306,6 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
         jSiteListSplitPane.setDividerSize(10);
         jSiteListSplitPane.setMinimumSize(new Dimension(100, 100));
 
-        flattenSplitPane(jSiteListSplitPane);
         gbc = getDefaultGridBagConstraints();
         gbc.gridheight = 5;
         gbc.gridwidth = 3;
@@ -396,26 +325,8 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
         jAddSiteButton.addActionListener(this::jAddSiteButtonClicked);
         this.panel.add(jAddSiteButton, gbc);
 
-        jAddSiteText = new JTextField("Enter a new item");
-        jAddSiteText.setForeground(Color.GRAY);
-        jAddSiteText.addFocusListener(new FocusListener() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                if (jAddSiteText.getText().equals("Enter a new item")) {
-                    jAddSiteText.setText("");
-                    jAddSiteText.setForeground(Color.BLACK);
-                }
-            }
-
-            @Override
-            public void focusLost(FocusEvent e) {
-                if (jAddSiteText.getText().isEmpty()) {
-                    jAddSiteText.setForeground(Color.GRAY);
-                    jAddSiteText.setText("Enter a new item");
-                }
-            }
-        });
-
+        jAddSiteText = new JPlaceholderTextField("");
+        jAddSiteText.setPlaceholder("Enter a new item");
         gbc = getDefaultGridBagConstraints();
         gbc.gridwidth = 2;
         gbc.gridx = 2;
@@ -477,7 +388,7 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
 
         JPanel jLogAreaPadder = new JPanel();
 
-        JSplitPane jLogAreaSplitPane = new JSplitPane();
+        JBurpSplitPane jLogAreaSplitPane = new JBurpSplitPane();
         jLogAreaSplitPane.setLeftComponent(jLogAreaScrollPanel);
         jLogAreaSplitPane.setRightComponent(jLogAreaPadder);
         jLogAreaSplitPane.setDividerLocation(500);
@@ -485,9 +396,7 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
         jLogAreaSplitPane.setDividerSize(10);
         jLogAreaSplitPane.setMinimumSize(new Dimension(100, 100));
 
-        flattenSplitPane(jLogAreaSplitPane);
         gbc = getDefaultGridBagConstraints();
-
         gbc.gridheight = 1;
         gbc.gridwidth = 3;
         gbc.gridx = 2;
