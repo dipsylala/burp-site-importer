@@ -149,7 +149,7 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
         InputStream is = this.getClass().getResourceAsStream("/resources/help.html");
         java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
         String helpText = s.next();
-        new PopUpHelp(helpText, (Component)actionEvent.getSource());
+        new PopUpHelp("Site Import", helpText, (Component)actionEvent.getSource());
     }
 
 
