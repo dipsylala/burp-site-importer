@@ -56,7 +56,7 @@ class SiteImportWorker extends SwingWorker<Void, Void> {
 
                 if (taskCount!=lastTaskCount){
                     progressMessage.completed = taskCount;
-                    firePropertyChange(Constants.SITE_COMPLETED, null, progressMessage);
+                    firePropertyChange(Constants.EVENT_SITE_COMPLETED, null, progressMessage);
                     lastTaskCount = taskCount;
                 }
 
@@ -83,7 +83,7 @@ class SiteImportWorker extends SwingWorker<Void, Void> {
             executor.shutdown();
         }
 
-        firePropertyChange(Constants.ALL_SITES_COMPLETED, false, true);
+        firePropertyChange(Constants.EVENT_ALL_SITES_COMPLETED, false, true);
 
         return null;
     }

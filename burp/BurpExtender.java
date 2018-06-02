@@ -207,7 +207,7 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
             progressMonitor.setProgress(progress);
         }
 
-        if (propertyChange.equals(Constants.ALL_SITES_COMPLETED)){
+        if (propertyChange.equals(Constants.EVENT_ALL_SITES_COMPLETED)){
             logger.log("------------------------------------" + System.lineSeparator() +
                        "Import Summary   "  + System.lineSeparator() +
                        "------------------------------------" + System.lineSeparator());
@@ -216,7 +216,7 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
             setPanelEnabledStatus(true);
         }
 
-        if (propertyChange.equals(Constants.SITE_COMPLETED)){
+        if (propertyChange.equals(Constants.EVENT_SITE_COMPLETED)){
             ProgressMessage progressMessage = (ProgressMessage)evt.getNewValue();
             progressMonitor.setNote(progressMessage.completed + "/" + progressMessage.total);
         }
@@ -332,7 +332,8 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
         gbc.fill = GridBagConstraints.HORIZONTAL;
         this.panel.add(jAddSiteText, gbc);
 
-        JButton jImportButton = new JButton("Import to Site List");
+        JButton jImportButton = new JButton("Start Import");
+        jImportButton.setFont(jImportButton.getFont().deriveFont(Font.BOLD));
         gbc = getDefaultGridBagConstraints();
         gbc.gridx = 1;
         gbc.gridy = 9;

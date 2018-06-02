@@ -21,5 +21,4 @@ class JBurpHelpButton extends JButton {
             setText("?");
         }
     }
-
 }
