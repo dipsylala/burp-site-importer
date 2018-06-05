@@ -14,9 +14,9 @@ import java.io.*;
 
 import static java.awt.GridBagConstraints.NORTH;
 
-class PopUpHelp {
+class BurpPopUpHelp {
 
-    PopUpHelp(String title, String body, Component baseComponent) {
+    BurpPopUpHelp(String title, String body, Component baseComponent) {
 
         // Configure the Header Area
         JEditorPane jHeaderEditorPane = new JEditorPane();

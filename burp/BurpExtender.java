@@ -138,7 +138,6 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
             this.logger.log(lineCount + " sites loaded");
         } catch (FileNotFoundException e) {
             this.logger.log("File not found: " + file.getName());
-            this.logger.log("File not found: " + file.getName());
         } catch (IOException e) {
             this.logger.log("Error reading file: " + file.getName());
         }
@@ -149,9 +148,8 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
         InputStream is = this.getClass().getResourceAsStream("/resources/help.html");
         java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
         String helpText = s.next();
-        new PopUpHelp("Site Import", helpText, (Component)actionEvent.getSource());
+        new BurpPopUpHelp("Site Import", helpText, (Component)actionEvent.getSource());
     }
-
 
     private void jButtonImportClicked(ActionEvent actionEvent) {
 
@@ -367,6 +365,7 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
         gbc = getDefaultGridBagConstraints();
         gbc.gridx = 2;
         gbc.gridy = 10;
+        jSiteListSplitPane.setDividerLocation(300);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         this.panel.add(jLogLabel, gbc);
 

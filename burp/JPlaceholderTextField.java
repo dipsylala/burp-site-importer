@@ -43,13 +43,9 @@ class JPlaceholderTextField extends JTextField {
         }
 
         final Graphics2D g = (Graphics2D) pG;
-        g.setRenderingHint(
-                RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
-
+        g.setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.setColor(getDisabledTextColor());
-        g.drawString(this.placeholder, getInsets().left, pG.getFontMetrics()
-                .getMaxAscent() + getInsets().top);
+        g.drawString(this.placeholder, getInsets().left, pG.getFontMetrics().getMaxAscent() + getInsets().top);
     }
 
     void setPlaceholder(final String placeholder) {
