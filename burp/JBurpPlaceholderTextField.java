@@ -4,13 +4,13 @@ import javax.swing.*;
 import javax.swing.text.Document;
 import java.awt.*;
 
-class JPlaceholderTextField extends JTextField {
+class JBurpPlaceholderTextField extends JTextField {
 
     private String placeholder;
 
-    JPlaceholderTextField(){}
+    JBurpPlaceholderTextField(){}
 
-    JPlaceholderTextField(
+    JBurpPlaceholderTextField(
             final Document pDoc,
             final String pText,
             final int pColumns)
@@ -18,15 +18,15 @@ class JPlaceholderTextField extends JTextField {
         super(pDoc, pText, pColumns);
     }
 
-    JPlaceholderTextField(final int pColumns) {
+    JBurpPlaceholderTextField(final int pColumns) {
         super(pColumns);
     }
 
-    JPlaceholderTextField(final String pText) {
+    JBurpPlaceholderTextField(final String pText) {
         super(pText);
     }
 
-    JPlaceholderTextField(final String pText, final int pColumns) {
+    JBurpPlaceholderTextField(final String pText, final int pColumns) {
         super(pText, pColumns);
     }
 
@@ -45,6 +45,7 @@ class JPlaceholderTextField extends JTextField {
         final Graphics2D g = (Graphics2D) pG;
         g.setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.setColor(getDisabledTextColor());
+        g.setFont(g.getFont().deriveFont(Font.ITALIC));
         g.drawString(this.placeholder, getInsets().left, pG.getFontMetrics().getMaxAscent() + getInsets().top);
     }
 

@@ -27,7 +27,7 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
     private JCheckBox jFollowRedirectCheckbox;
     private final DefaultListModel<String> siteListModel = new DefaultListModel<>();
     private JList<String> jSiteList;
-    private JPlaceholderTextField jAddSiteText;
+    private JBurpPlaceholderTextField jAddSiteText;
     private IListScannerLogger logger;
     private ProgressMonitor progressMonitor;
     private SiteImportWorker siteImportWorkerTask;
@@ -321,7 +321,7 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
         jAddSiteButton.addActionListener(this::jAddSiteButtonClicked);
         this.panel.add(jAddSiteButton, gbc);
 
-        jAddSiteText = new JPlaceholderTextField("");
+        jAddSiteText = new JBurpPlaceholderTextField("");
         jAddSiteText.setPlaceholder("Enter a new item");
         gbc = getDefaultGridBagConstraints();
         gbc.gridwidth = 2;
