@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/list-scanner.iml" filepath="$PROJECT_DIR$/list-scanner.iml" />
+      <module fileurl="file://$PROJECT_DIR$/burp-site-importer.iml" filepath="$PROJECT_DIR$/burp-site-importer.iml" />
     </modules>
   </component>
 </project>
