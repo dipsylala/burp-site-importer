@@ -8,8 +8,13 @@ import org.w3c.dom.NodeList;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.xpath.*;
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,35 +54,103 @@ public class NessusFileImporter extends XmlImporterBase implements ISiteImporter
         //  If there's "SSL : no" in the plugin output, we have http
         //  If it doesn't, check the port against defaults (eg 80 for http, 443 for https)
 
-
-
         NodeList reportHosts= doc.getElementsByTagName("ReportHost");
 
-        Pattern locationPattern = Pattern.compile("Location: (.+?)\\n");
-
         int numHosts = reportHosts.getLength();
-        for (int i = 0; i< numHosts; i++){
-            Node reportHost = reportHosts.item(i);
-
-            String hostIP = reportHost.getAttributes().getNamedItem("name").getNodeValue();
-            NodeList reportItems = ((Element) reportHost).getElementsByTagName("ReportItem");
-
-            for (int j = 0; j < reportItems.getLength(); j++){
-                Node reportItem = reportItems.item(j);
-
-                if (!reportItem.getAttributes().getNamedItem("pluginID").getNodeValue().equals(NESSUS_HTTP_INFO_PLUGIN_ID)){
-                    continue;
-                }
-
-                String port = reportItem.getAttributes().getNamedItem("port").getNodeValue();
-                String pluginOutput = ((Element)reportItem).getElementsByTagName("plugin_output").item(0).getTextContent();
-
-                Matcher m = locationPattern.matcher(pluginOutput);
-            }
-
+        for (int hostIndex = 0; hostIndex < numHosts; hostIndex++){
+            Node reportHost = reportHosts.item(hostIndex);
+            sites.addAll(getSitesFromHost(reportHost));
         }
 
         return sites;
+    }
+
+    private List<String> getSitesFromHost(Node reportHost) {
+
+        List<String> sites = new ArrayList<>();
+
+        String hostIP = reportHost.getAttributes().getNamedItem("name").getNodeValue();
+        NodeList reportItems = ((Element) reportHost).getElementsByTagName("ReportItem");
+
+        for (int reportItemIndex = 0; reportItemIndex < reportItems.getLength(); reportItemIndex++) {
+            Node reportItem = reportItems.item(reportItemIndex);
+
+            if (!reportItem.getAttributes().getNamedItem("pluginID").getNodeValue().equals(NESSUS_HTTP_INFO_PLUGIN_ID)) {
+                continue;
+            }
+
+            String pluginOutput = ((Element) reportItem).getElementsByTagName("plugin_output").item(0).getTextContent();
+            String locationHeader = retrieveLocationHeader(pluginOutput);
+
+            int port = Integer.parseInt(reportItem.getAttributes().getNamedItem("port").getNodeValue());
+
+            if (locationHeader.length() == 0){
+                String url = createUrlFromHostAndPort(hostIP, port, reportItem, pluginOutput);
+                sites.add(url);
+            } else if (locationHeaderIsAbsolute(locationHeader)){
+                sites.add(locationHeader);
+            } else {
+                String url = createUrlFromRelativeLocationHeader (hostIP, port, locationHeader, pluginOutput );
+                sites.add(url);
+            }
+        }
+
+        return sites;
+
+    }
+
+    private String createUrlFromRelativeLocationHeader(String hostIP, int port, String locationHeader, String pluginOutput) {
+        String scheme = calculateSchemeFromPortAndPlugin(port, pluginOutput);
+
+        URL url;
+
+        if (!locationHeader.startsWith("/")){
+            locationHeader = "/" + locationHeader;
+        }
+
+        try {
+            url = new URL(scheme, hostIP, port, locationHeader);
+        } catch (MalformedURLException e) {
+            return "";
+        }
+
+        return url.toString();
+    }
+
+    private boolean locationHeaderIsAbsolute(String locationHeader){
+        URI headerUri = null;
+        try {
+            headerUri = new URI(locationHeader);
+        } catch (URISyntaxException e) {
+            return false;
+        }
+        return headerUri.isAbsolute();
+    }
+
+    private String retrieveLocationHeader(String pluginContents){
+        Pattern regex = Pattern.compile("Location: (.+)\n");
+        Matcher regexMatcher = regex.matcher(pluginContents);
+        if (regexMatcher.find() && regexMatcher.groupCount() == 1){
+            return regexMatcher.group(1);
+        }
+
+        return "";
+    }
+
+    private String createUrlFromHostAndPort(String hostIP, int port, Node reportItem, String pluginOutput) {
+
+        String scheme = calculateSchemeFromPortAndPlugin(port, pluginOutput);
+        return String.format("%s://%s:%d", scheme, hostIP, port);
+    }
+
+    private String calculateSchemeFromPortAndPlugin(int port, String pluginOutput){
+        if (pluginOutput.contains("SSL : yes")){
+            return "https";
+        } else if (pluginOutput.contains("SSL : no")) {
+            return "http";
+        }
+
+        return isAnHttpsPort(port)?"https":"http";
     }
 
     @Override

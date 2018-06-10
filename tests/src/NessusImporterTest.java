@@ -51,8 +51,9 @@ public class NessusImporterTest {
         try {
             File file = new File(getClass().getResource("/validscan.nessus").toURI());
             List<String> sites = sut.loadFile(file);
-            assert sites.size() == 1;
-            assert sites.get(0).equals("https://127.0.0.1:443");
+            assert sites.size() == 2;
+            assert sites.get(0).equals("https://10.0.0.2:8834/html5.html");
+            assert sites.get(1).equals("http://10.0.0.2:80");
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
