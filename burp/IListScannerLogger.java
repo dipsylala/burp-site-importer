@@ -1,6 +1,6 @@
 package burp;
 
-interface IListScannerLogger {
+public interface IListScannerLogger {
     void log (String message);
     void clear();
 }

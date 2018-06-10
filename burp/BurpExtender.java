@@ -32,6 +32,8 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
     private ProgressMonitor progressMonitor;
     private SiteImportWorker siteImportWorkerTask;
 
+    private List<ISiteImporter> siteImporters = new ArrayList<>();
+
     private GridBagConstraints getDefaultGridBagConstraints(){
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(3,3,3,3);
@@ -46,9 +48,11 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
 
         callbacks.setExtensionName("Site Import Extension");
 
-        SwingUtilities.invokeLater(
-            this::createUI
-        );
+        SwingUtilities.invokeLater(() -> {
+            createUI();
+            siteImporters.add(new TextFileImporter(logger));
+            siteImporters.add(new NmapFileImporter(logger));
+        });
     }
 
     private void jAddSiteButtonClicked(ActionEvent actionEvent) {
@@ -109,38 +113,42 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
     private void jButtonLoadClicked(ActionEvent actionEvent) {
 
         JFileChooser fileChooser = new JFileChooser("Import Sites");
-        FileNameExtensionFilter filter = new FileNameExtensionFilter("Text Files", "txt");
-        fileChooser.setFileFilter(filter);
+        FileNameExtensionFilter txtFilter = new FileNameExtensionFilter("Text Files", "txt");
+        FileNameExtensionFilter nmapfilter = new FileNameExtensionFilter("Nmap XML Files", "xml");
+        fileChooser.addChoosableFileFilter(txtFilter);
+        fileChooser.addChoosableFileFilter(nmapfilter);
 
         if (fileChooser.showOpenDialog(this.panel) != JFileChooser.APPROVE_OPTION) {
             return;
         }
 
         File file = fileChooser.getSelectedFile();
-        this.logger.log("Loading " + file.getName());
 
-        int lineCount = 0;
+        ISiteImporter siteImporter = findFileImporterForFile(file);
 
-        try(BufferedReader br = new BufferedReader(new FileReader(file.getAbsoluteFile()))) {
-            String line = br.readLine();
-
-            while (line != null) {
-                line = line.trim();
-                if (line.length() > 0) {
-                    lineCount++;
-
-                    siteListModel.addElement(line);
-                }
-
-                line = br.readLine();
-            }
-
-            this.logger.log(lineCount + " sites loaded");
-        } catch (FileNotFoundException e) {
-            this.logger.log("File not found: " + file.getName());
-        } catch (IOException e) {
-            this.logger.log("Error reading file: " + file.getName());
+        if (siteImporter == null){
+            this.logger.log("Could not parse " + file.getName());
+            return;
         }
+
+        this.logger.log("Loading " + file.getName());
+        List<String> sites = siteImporter.loadFile(file);
+
+        this.logger.log(sites.size() + " site"+(sites.size()==1?"":"s") + " loaded");
+
+        for (String site : sites){
+            this.siteListModel.addElement(site);
+        }
+    }
+
+    private ISiteImporter findFileImporterForFile(File file) {
+        for (ISiteImporter siteImporter : this.siteImporters){
+            if (siteImporter.canParseFile(file)){
+                return siteImporter;
+            }
+        }
+
+        return null;
     }
 
     private void jButtonHelpClicked(ActionEvent actionEvent) {
@@ -187,7 +195,7 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
 
     @Override
     public String getTabCaption() {
-        return "List Scanner";
+        return "Site Importer";
     }
 
     @Override
@@ -407,6 +415,5 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
         this.logger = new ListScannerLogger(jLogArea);
 
         this.callbacks.addSuiteTab(BurpExtender.this);
-
     }
 }
