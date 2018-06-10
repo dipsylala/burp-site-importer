@@ -44,9 +44,9 @@ public class NessusFileImporter extends XmlImporterBase implements ISiteImporter
         // Plugin ID 22964 is the Service Detection
         // Plugin ID 24260 is 'HTTP Information' and does a lot of the work for us
         // We can derive the URL:
-        //  There may be a Location field in the plugin output, which gives us a lot.
-        //  If it has "SSL : yes" in the plugin output, we have an https
-        //  If it has "SSL : no" in the plugin output, we have http
+        //  There may be a Location field in the plugin output headers, which gives us a lot.
+        //  If there's "SSL : yes" in the plugin output, we have an https
+        //  If there's "SSL : no" in the plugin output, we have http
         //  If it doesn't, check the port against defaults (eg 80 for http, 443 for https)
 
 
