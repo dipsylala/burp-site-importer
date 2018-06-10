@@ -6,6 +6,40 @@ import java.net.URISyntaxException;
 import java.util.List;
 
 public class NmapImporterTest {
+
+    @org.junit.Test
+    public void shouldDetectInvalidFile() {
+
+        IListScannerLogger logger = createMockScannerLogger();
+
+        NmapFileImporter sut = new NmapFileImporter(logger);
+
+        try {
+            File file = new File(getClass().getResource("/invalidnmapfile.xml").toURI());
+            boolean result = sut.canParseFile(file);
+            assert !result;
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @org.junit.Test
+    public void shouldDetectValidFile() {
+
+        IListScannerLogger logger = createMockScannerLogger();
+
+        NmapFileImporter sut = new NmapFileImporter(logger);
+
+        try {
+            File file = new File(getClass().getResource("/simplescan.xml").toURI());
+            boolean result = sut.canParseFile(file);
+            assert result;
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+    }
+
+
     @org.junit.Test
     public void shortValidFileShouldLoad() {
 

@@ -52,6 +52,7 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
             createUI();
             siteImporters.add(new TextFileImporter(logger));
             siteImporters.add(new NmapFileImporter(logger));
+            siteImporters.add(new OpenVasFileImporter(logger));
         });
     }
 
@@ -114,8 +115,9 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
 
         JFileChooser fileChooser = new JFileChooser("Import Sites");
         FileNameExtensionFilter txtFilter = new FileNameExtensionFilter("Text Files", "txt");
-        FileNameExtensionFilter nmapfilter = new FileNameExtensionFilter("Nmap XML Files", "xml");
+        FileNameExtensionFilter nmapfilter = new FileNameExtensionFilter("Nmap, OpenVAS XML Files", "xml");
         fileChooser.addChoosableFileFilter(txtFilter);
+        fileChooser.addChoosableFileFilter(nmapfilter);
         fileChooser.addChoosableFileFilter(nmapfilter);
 
         if (fileChooser.showOpenDialog(this.panel) != JFileChooser.APPROVE_OPTION) {

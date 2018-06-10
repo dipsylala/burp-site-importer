@@ -1,22 +1,10 @@
 package burp;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-
-import javax.swing.*;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TextFileImporter extends FileImporterBase implements ISiteImporter{
+public class TextFileImporter implements ISiteImporter{
 
     private IListScannerLogger logger;
 
@@ -59,5 +47,14 @@ public class TextFileImporter extends FileImporterBase implements ISiteImporter{
     @Override
     public boolean canParseFile(File file) {
         return (getExtension(file).toLowerCase().equals("txt"));
+    }
+
+    String getExtension(File file){
+        String fileName = file.getName();
+
+        if(fileName.lastIndexOf(".") != -1 && fileName.lastIndexOf(".") != 0)
+            return fileName.substring(fileName.lastIndexOf(".")+1);
+
+        return "";
     }
 }
