@@ -69,7 +69,7 @@ class SiteCallRunnable implements Runnable {
 
         IResponseInfo responseInfo = getResponseInfoFromRequestResponse(siteRequestResponse);
 
-        if (this.addToScope){
+        if (this.addToScope || this.deepScan){
             callbacks.includeInScope(url);
         }
 

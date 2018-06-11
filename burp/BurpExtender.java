@@ -53,7 +53,12 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
             siteImporters.add(new TextFileImporter(logger));
             siteImporters.add(new NmapFileImporter(logger));
             siteImporters.add(new OpenVasFileImporter(logger));
+            updateAddToScopeCheckBox();
         });
+    }
+
+    private void jSpiderCheckBoxClicked(ActionEvent actionEvent){
+        updateAddToScopeCheckBox();
     }
 
     private void jAddSiteButtonClicked(ActionEvent actionEvent) {
@@ -73,6 +78,10 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
 
     private void jButtonClearLogClicked(ActionEvent actionEvent) {
         this.logger.clear();
+    }
+
+    private void updateAddToScopeCheckBox(){
+        jAddToScopeCheckBox.setEnabled(!jSpiderCheckBox.isSelected());
     }
 
     private void jPasteURLButtonClicked(ActionEvent actionEvent) {
@@ -240,6 +249,8 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
         for (Component component : components) {
             component.setEnabled(enabled);
         }
+
+        updateAddToScopeCheckBox();
     }
 
     private void createUI() {
@@ -349,6 +360,7 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
         this.panel.add(jImportButton, gbc);
 
         jSpiderCheckBox = new JCheckBox("Spider URLs");
+        jSpiderCheckBox.addActionListener(this::jSpiderCheckBoxClicked);
         gbc = getDefaultGridBagConstraints();
         gbc.gridx = 2;
         gbc.gridy = 7;
