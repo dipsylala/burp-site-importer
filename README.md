@@ -40,7 +40,7 @@ In writing this, I coded up some reusable components for a similar Look and Feel
 ![Splitter](media/splitter.png)
 
 ## TODO
-More imports formats - the more the merrier.
-Better reporting
-Anything else we can start doing once we've imported the sites?
-Make more components - eg the title/help button can probably be made into one component
+* More imports formats - the more the merrier.
+* Better reporting
+* Anything else we can start doing once we've imported the sites?
+* Make more components - eg the title/help button can probably be made into one component
