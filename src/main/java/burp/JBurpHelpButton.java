@@ -11,7 +11,7 @@ class JBurpHelpButton extends JButton {
     JBurpHelpButton(){
         setFocusPainted(false);
         setPreferredSize(new Dimension(30, 30));
-        InputStream is = getClass().getResourceAsStream("/main/resources/question_mark.png");
+        InputStream is = getClass().getResourceAsStream("/question_mark.png");
 
         try {
             Image image = ImageIO.read(is);

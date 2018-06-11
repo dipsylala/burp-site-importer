@@ -45,7 +45,7 @@ class BurpPopUpHelp {
 
         try {
 
-            InputStream is = getClass().getResourceAsStream("/main/resources/help.css");
+            InputStream is = getClass().getResourceAsStream("/help.css");
             Reader r = new BufferedReader(new InputStreamReader(is, "ISO-8859-1"));
             contentStyleSheet.loadRules(r, null);
             headerStyleSheet.loadRules(r, null);
