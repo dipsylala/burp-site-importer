@@ -61,6 +61,14 @@ class SiteCallRunnable implements Runnable {
 
         try{
             siteRequestResponse = makeRequestToSite(url);
+
+            // Sometimes instead of raising an exception,
+            // makeHttpRequest returns a null response if it can't connect
+            if (siteRequestResponse.getResponse() == null){
+                summary.addUnreachableSite(site);
+                return;
+            }
+
             callbacks.addToSiteMap(siteRequestResponse);
         } catch (RuntimeException ex){
             summary.addUnreachableSite(site);
