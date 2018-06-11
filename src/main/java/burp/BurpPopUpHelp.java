@@ -61,6 +61,7 @@ class BurpPopUpHelp {
 
         // Set up the main Popup Frame
         JFrame popupFrame = new JFrame("");
+        popupFrame.getRootPane().setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.BLACK));
         popupFrame.setUndecorated(true);
         popupFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         popupFrame.setSize(new Dimension(660, 265));
