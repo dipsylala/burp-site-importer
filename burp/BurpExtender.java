@@ -115,10 +115,9 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
 
         JFileChooser fileChooser = new JFileChooser("Import Sites");
         FileNameExtensionFilter txtFilter = new FileNameExtensionFilter("Text Files", "txt");
-        FileNameExtensionFilter nmapfilter = new FileNameExtensionFilter("Nmap, OpenVAS XML Files", "xml");
+        FileNameExtensionFilter xmlFilter = new FileNameExtensionFilter("Nmap, OpenVAS XML Files", "xml");
         fileChooser.addChoosableFileFilter(txtFilter);
-        fileChooser.addChoosableFileFilter(nmapfilter);
-        fileChooser.addChoosableFileFilter(nmapfilter);
+        fileChooser.addChoosableFileFilter(xmlFilter);
 
         if (fileChooser.showOpenDialog(this.panel) != JFileChooser.APPROVE_OPTION) {
             return;
