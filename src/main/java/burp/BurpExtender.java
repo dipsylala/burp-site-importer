@@ -53,6 +53,7 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
             siteImporters.add(new TextFileImporter(logger));
             siteImporters.add(new NmapFileImporter(logger));
             siteImporters.add(new OpenVasFileImporter(logger));
+            siteImporters.add(new NessusFileImporter(logger));
             updateAddToScopeCheckBox();
         });
     }
@@ -125,8 +126,10 @@ public class BurpExtender implements IBurpExtender, ITab, PropertyChangeListener
         JFileChooser fileChooser = new JFileChooser("Import Sites");
         FileNameExtensionFilter txtFilter = new FileNameExtensionFilter("Text Files", "txt");
         FileNameExtensionFilter xmlFilter = new FileNameExtensionFilter("Nmap, OpenVAS XML Files", "xml");
+        FileNameExtensionFilter nessusFilter = new FileNameExtensionFilter("Nessus Files", "nessus");
         fileChooser.addChoosableFileFilter(txtFilter);
         fileChooser.addChoosableFileFilter(xmlFilter);
+        fileChooser.addChoosableFileFilter(nessusFilter);
 
         if (fileChooser.showOpenDialog(this.panel) != JFileChooser.APPROVE_OPTION) {
             return;
