@@ -1,4 +1,4 @@
-
+package burp;
 
 /*
  * @(#)IScannerInsertionPointProvider.java

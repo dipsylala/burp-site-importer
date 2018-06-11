@@ -1,3 +1,5 @@
+package burp;
+
 class SiteInformation {
     int port;
     String protocol;

@@ -1,4 +1,4 @@
-
+package burp;
 
 /*
  * @(#)IResponseKeywords.java

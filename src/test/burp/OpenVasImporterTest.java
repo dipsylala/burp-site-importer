@@ -1,18 +1,20 @@
+package burp;
+
 import java.io.File;
 import java.net.URISyntaxException;
 import java.util.List;
 
-public class NessusImporterTest {
+public class OpenVasImporterTest {
 
     @org.junit.Test
     public void shouldDetectInvalidFile() {
 
         IListScannerLogger logger = createMockScannerLogger();
 
-        NessusFileImporter sut = new NessusFileImporter(logger);
+        OpenVasFileImporter sut = new OpenVasFileImporter(logger);
 
         try {
-            File file = new File(getClass().getResource("/src/test/resources/invalidfile.nessus").toURI());
+            File file = new File(getClass().getResource("/invalidopenvasfile.xml").toURI());
             boolean result = sut.canParseFile(file);
             assert !result;
         } catch (URISyntaxException e) {
@@ -25,10 +27,10 @@ public class NessusImporterTest {
 
         IListScannerLogger logger = createMockScannerLogger();
 
-        NessusFileImporter sut = new NessusFileImporter(logger);
+        OpenVasFileImporter sut = new OpenVasFileImporter(logger);
 
         try {
-            File file = new File(getClass().getResource("/src/test/resources/validscan.nessus").toURI());
+            File file = new File(getClass().getResource("/openvas.xml").toURI());
             boolean result = sut.canParseFile(file);
             assert result;
         } catch (URISyntaxException e) {
@@ -38,18 +40,17 @@ public class NessusImporterTest {
 
 
     @org.junit.Test
-    public void validNessusFileShouldLoad() {
+    public void validOpenVasFileShouldLoad() {
 
         IListScannerLogger logger = createMockScannerLogger();
 
-        NessusFileImporter sut = new NessusFileImporter(logger);
+        OpenVasFileImporter sut = new OpenVasFileImporter(logger);
 
         try {
-            File file = new File(getClass().getResource("/src/test/resources/validscan.nessus").toURI());
+            File file = new File(getClass().getResource("/openvas.xml").toURI());
             List<String> sites = sut.loadFile(file);
-            assert sites.size() == 2;
-            assert sites.get(0).equals("https://10.0.0.2:8834/html5.html");
-            assert sites.get(1).equals("http://10.0.0.2:80");
+            assert sites.size() == 1;
+            assert sites.get(0).equals("https://127.0.0.1:443");
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }

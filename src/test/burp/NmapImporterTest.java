@@ -1,3 +1,5 @@
+package burp;
+
 import java.io.File;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -12,7 +14,7 @@ public class NmapImporterTest {
         NmapFileImporter sut = new NmapFileImporter(logger);
 
         try {
-            File file = new File(getClass().getResource("/src/test/resources/invalidnmapfile.xml").toURI());
+            File file = new File(getClass().getResource("/invalidnmapfile.xml").toURI());
             boolean result = sut.canParseFile(file);
             assert !result;
         } catch (URISyntaxException e) {
@@ -28,7 +30,7 @@ public class NmapImporterTest {
         NmapFileImporter sut = new NmapFileImporter(logger);
 
         try {
-            File file = new File(getClass().getResource("/src/test/resources/simplescan.xml").toURI());
+            File file = new File(getClass().getResource("/simplescan.xml").toURI());
             boolean result = sut.canParseFile(file);
             assert result;
         } catch (URISyntaxException e) {
@@ -45,7 +47,7 @@ public class NmapImporterTest {
         NmapFileImporter sut = new NmapFileImporter(logger);
 
         try {
-            File file = new File(getClass().getResource("/src/test/resources/simplescan.xml").toURI());
+            File file = new File(getClass().getResource("/simplescan.xml").toURI());
             List<String> sites = sut.loadFile(file);
             assert sites.size() == 2;
             assert sites.get(0).equals("http://www.microsoft.com:80");
@@ -61,7 +63,7 @@ public class NmapImporterTest {
         NmapFileImporter sut = new NmapFileImporter(logger);
 
         try {
-            File file = new File(getClass().getResource("/src/test/resources/complexscan.xml").toURI());
+            File file = new File(getClass().getResource("/complexscan.xml").toURI());
             List<String> sites = sut.loadFile(file);
 
             assert sites.size() == 2;

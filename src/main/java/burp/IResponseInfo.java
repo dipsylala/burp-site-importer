@@ -1,4 +1,4 @@
-
+package burp;
 
 /*
  * @(#)IResponseInfo.java

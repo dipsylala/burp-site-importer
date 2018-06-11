@@ -1,3 +1,5 @@
+package burp;
+
 import javax.swing.*;
 
 class ListScannerLogger implements IListScannerLogger {

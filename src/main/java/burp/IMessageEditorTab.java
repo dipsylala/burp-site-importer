@@ -1,4 +1,4 @@
-
+package burp;
 
 /*
  * @(#)IMessageEditorTab.java

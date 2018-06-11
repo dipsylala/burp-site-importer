@@ -1,4 +1,4 @@
-
+package burp;
 
 /*
  * @(#)IScannerCheck.java

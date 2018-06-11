@@ -1,3 +1,5 @@
+package burp;
+
 import java.awt.*;
 
 final class Constants {

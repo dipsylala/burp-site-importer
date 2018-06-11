@@ -1,3 +1,5 @@
+package burp;
+
 import javax.swing.*;
 import java.util.List;
 import java.util.concurrent.Executors;
