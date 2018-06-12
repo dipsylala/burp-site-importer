@@ -1,5 +1,5 @@
 # Burp Site Importer
-Burp extension to read files from various files, connect to them, and import the information into the Site window. On a successful connection, further operations can be performed.
+Burp extension to read URLs from various files, connect to them, and import the information into the Site window. On a successful connection, further operations can be performed.
 
 ![Screenshot](media/interface.png)
 
