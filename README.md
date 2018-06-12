@@ -18,7 +18,7 @@ Post-connection options include:
 ## Why?
 I'm a .NET dev by trade so wanted to stretch my skills with some Java until we get .NET Core bindings for Burp (HINT) ;) 
 
-A similar tool had been written in Python a couple of years ago but hasn't been updated since - https://github.com/dipsylala/Burp-Importer. It had some shortcomings, I needed the practice... and here we are.
+A similar tool had been written in Python a couple of years ago but hasn't been updated since - https://github.com/SmeegeSec/Burp-Importer. It had some shortcomings, I needed the practice... and here we are.
 This one's multithreaded, non-blocking and I've designed the import to be open to extension. Filetype detection is typically based on format detection, with only text format relying on a txt extension.
 
 In writing this, I coded up some reusable components for a similar Look and Feel to Burp:
